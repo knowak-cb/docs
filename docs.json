@@ -48,6 +48,10 @@
         ]
       },
       {
+        "tab": "API Reference",
+        "asyncapi": "/deribit_asyncapi.json"
+      },
+      {
         "tab": "API reference",
         "groups": [
           {
