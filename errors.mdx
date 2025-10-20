@@ -1,0 +1,512 @@
+---
+title: "Error Codes"
+description: "Complete reference of Deribit API error codes and handling"
+---
+
+# Error Codes
+
+Complete reference for handling errors in the Deribit API.
+
+## Error Response Format
+
+```json
+{
+  "jsonrpc": "2.0",
+  "error": {
+    "code": 13009,
+    "message": "invalid_token",
+    "data": {
+      "reason": "token has expired",
+      "param": "access_token"
+    }
+  },
+  "usIn": 1704153600000000,
+  "usOut": 1704153600001234,
+  "usDiff": 1234,
+  "id": 42
+}
+```
+
+## Common Error Codes
+
+### Authentication Errors (10000-10099)
+
+| Code | Message | Description | Solution |
+|------|---------|-------------|----------|
+| 10000 | `authorization_required` | Authentication needed | Provide valid access token |
+| 10001 | `invalid_credentials` | Invalid API key/secret | Check credentials |
+| 10002 | `insufficient_funds` | Not enough balance | Add funds or reduce order size |
+| 10003 | `invalid_request` | Malformed request | Check request format |
+| 10004 | `not_found` | Resource not found | Verify resource exists |
+| 10005 | `forbidden` | Operation not allowed | Check permissions |
+| 10006 | `not_open_yet` | Trading not started | Wait for market open |
+| 10007 | `already_closed` | Trading ended | Market is closed |
+| 10008 | `price_too_low` | Price below minimum | Increase price |
+| 10009 | `invalid_argument` | Invalid parameter | Check parameter values |
+
+### Token Errors (13000-13099)
+
+| Code | Message | Description | Solution |
+|------|---------|-------------|----------|
+| 13009 | `invalid_token` | Token expired/invalid | Refresh or re-authenticate |
+| 13010 | `token_revoked` | Token was revoked | Re-authenticate |
+| 13011 | `insufficient_scope` | Missing permissions | Use token with correct scope |
+
+### Rate Limit Errors (10029)
+
+| Code | Message | Description | Solution |
+|------|---------|-------------|----------|
+| 10029 | `rate_limit` | Too many requests | Implement rate limiting |
+
+### Trading Errors (11000-11099)
+
+| Code | Message | Description | Solution |
+|------|---------|-------------|----------|
+| 11000 | `order_not_found` | Order doesn't exist | Check order ID |
+| 11001 | `order_closed` | Order already filled/cancelled | Cannot modify |
+| 11002 | `order_in_liquidation` | Order in liquidation | Wait for completion |
+| 11003 | `price_out_of_range` | Price too far from mark | Adjust price |
+| 11004 | `amount_too_small` | Order size too small | Increase amount |
+| 11005 | `amount_too_large` | Order size too large | Reduce amount |
+| 11006 | `post_only_reject` | Would take liquidity | Use different order type |
+| 11007 | `reduce_only_reject` | Would increase position | Check position size |
+| 11008 | `max_position_exceeded` | Position limit reached | Close positions |
+| 11009 | `self_trade_reject` | Would trade with self | Adjust price |
+
+## Error Handling Strategies
+
+### Basic Error Handler
+
+```javascript
+function handleError(error) {
+  switch (error.code) {
+    case 13009:
+      // Token expired - refresh
+      return refreshToken();
+    
+    case 10002:
+      // Insufficient funds
+      throw new Error('Insufficient funds for this operation');
+    
+    case 10029:
+      // Rate limit - retry with backoff
+      return retryWithBackoff();
+    
+    case 11006:
+      // Post-only rejected
+      console.log('Order would have taken liquidity');
+      return null;
+    
+    default:
+      throw new Error(`API Error ${error.code}: ${error.message}`);
+  }
+}
+```
+
+### Retry Logic
+
+```javascript
+async function retryWithBackoff(fn, maxRetries = 3) {
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      return await fn();
+    } catch (error) {
+      if (error.code === 10029) {
+        // Rate limit - exponential backoff
+        const delay = Math.pow(2, i) * 1000;
+        console.log(`Rate limited, retrying in ${delay}ms`);
+        await sleep(delay);
+        continue;
+      }
+      
+      if (error.code === 13009) {
+        // Token expired - refresh and retry
+        await refreshToken();
+        continue;
+      }
+      
+      // Other errors - don't retry
+      throw error;
+    }
+  }
+  
+  throw new Error('Max retries exceeded');
+}
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+```
+
+### Error Recovery
+
+```javascript
+class ErrorRecovery {
+  constructor(apiClient) {
+    this.apiClient = apiClient;
+    this.maxRetries = 3;
+  }
+
+  async executeWithRecovery(fn) {
+    let lastError;
+    
+    for (let attempt = 0; attempt < this.maxRetries; attempt++) {
+      try {
+        return await fn();
+      } catch (error) {
+        lastError = error;
+        
+        const shouldRetry = await this.handleError(error, attempt);
+        if (!shouldRetry) {
+          throw error;
+        }
+      }
+    }
+    
+    throw lastError;
+  }
+
+  async handleError(error, attempt) {
+    switch (error.code) {
+      case 13009: // Token expired
+        await this.apiClient.refreshToken();
+        return true;
+      
+      case 10029: // Rate limit
+        const delay = Math.pow(2, attempt) * 1000;
+        await sleep(delay);
+        return true;
+      
+      case 10002: // Insufficient funds
+        console.error('Insufficient funds - cannot retry');
+        return false;
+      
+      case 11000: // Order not found
+        console.warn('Order not found - may have been filled');
+        return false;
+      
+      default:
+        // Unknown error - don't retry
+        return false;
+    }
+  }
+}
+
+// Usage
+const recovery = new ErrorRecovery(apiClient);
+
+try {
+  const result = await recovery.executeWithRecovery(async () => {
+    return await apiClient.placeOrder({
+      instrument_name: 'BTC-PERPETUAL',
+      amount: 10,
+      price: 50000
+    });
+  });
+  console.log('Order placed:', result);
+} catch (error) {
+  console.error('Failed after retries:', error);
+}
+```
+
+## Error Monitoring
+
+### Error Logger
+
+```javascript
+class ErrorLogger {
+  constructor() {
+    this.errors = [];
+  }
+
+  log(error, context = {}) {
+    this.errors.push({
+      code: error.code,
+      message: error.message,
+      data: error.data,
+      context,
+      timestamp: Date.now()
+    });
+    
+    // Alert on critical errors
+    if (this.isCritical(error)) {
+      this.alert(error);
+    }
+  }
+
+  isCritical(error) {
+    const criticalCodes = [10002, 11008]; // Insufficient funds, max position
+    return criticalCodes.includes(error.code);
+  }
+
+  alert(error) {
+    console.error('CRITICAL ERROR:', error);
+    // Send to monitoring service
+  }
+
+  getStats() {
+    const errorCounts = {};
+    this.errors.forEach(err => {
+      errorCounts[err.code] = (errorCounts[err.code] || 0) + 1;
+    });
+    
+    return {
+      total: this.errors.length,
+      byCod: errorCounts,
+      recent: this.errors.slice(-10)
+    };
+  }
+}
+```
+
+### Error Metrics
+
+```javascript
+class ErrorMetrics {
+  constructor() {
+    this.metrics = {
+      total: 0,
+      byCode: {},
+      byMethod: {},
+      lastHour: []
+    };
+  }
+
+  record(error, method) {
+    this.metrics.total++;
+    
+    // Count by error code
+    this.metrics.byCode[error.code] = 
+      (this.metrics.byCode[error.code] || 0) + 1;
+    
+    // Count by method
+    this.metrics.byMethod[method] = 
+      (this.metrics.byMethod[method] || 0) + 1;
+    
+    // Track recent errors
+    this.metrics.lastHour.push({
+      code: error.code,
+      method,
+      timestamp: Date.now()
+    });
+    
+    // Clean old errors
+    this.cleanOldErrors();
+  }
+
+  cleanOldErrors() {
+    const oneHourAgo = Date.now() - 3600000;
+    this.metrics.lastHour = this.metrics.lastHour.filter(
+      err => err.timestamp > oneHourAgo
+    );
+  }
+
+  getErrorRate() {
+    return this.metrics.lastHour.length / 3600; // errors per second
+  }
+
+  getMostCommonErrors(limit = 5) {
+    return Object.entries(this.metrics.byCode)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, limit)
+      .map(([code, count]) => ({ code: parseInt(code), count }));
+  }
+}
+```
+
+## Validation Errors
+
+### Parameter Validation
+
+```javascript
+function validateOrderParams(params) {
+  const errors = [];
+
+  // Required fields
+  if (!params.instrument_name) {
+    errors.push({
+      code: 10009,
+      message: 'invalid_argument',
+      param: 'instrument_name'
+    });
+  }
+
+  if (!params.amount || params.amount <= 0) {
+    errors.push({
+      code: 10009,
+      message: 'invalid_argument',
+      param: 'amount'
+    });
+  }
+
+  // Type validation
+  if (params.type === 'limit' && !params.price) {
+    errors.push({
+      code: 10009,
+      message: 'invalid_argument',
+      param: 'price',
+      reason: 'price required for limit orders'
+    });
+  }
+
+  return errors;
+}
+
+// Usage
+const errors = validateOrderParams(orderParams);
+if (errors.length > 0) {
+  throw new Error(`Validation failed: ${JSON.stringify(errors)}`);
+}
+```
+
+## Complete Error Handler
+
+```javascript
+class DeribitErrorHandler {
+  constructor(apiClient) {
+    this.apiClient = apiClient;
+    this.logger = new ErrorLogger();
+    this.metrics = new ErrorMetrics();
+  }
+
+  async handle(error, context = {}) {
+    // Log error
+    this.logger.log(error, context);
+    this.metrics.record(error, context.method);
+
+    // Handle specific errors
+    switch (error.code) {
+      case 13009:
+        return this.handleTokenExpired();
+      
+      case 10029:
+        return this.handleRateLimit(context.attempt || 0);
+      
+      case 10002:
+        return this.handleInsufficientFunds(error);
+      
+      case 11006:
+        return this.handlePostOnlyReject(context);
+      
+      default:
+        return this.handleGenericError(error);
+    }
+  }
+
+  async handleTokenExpired() {
+    console.log('Token expired, refreshing...');
+    await this.apiClient.refreshToken();
+    return { retry: true };
+  }
+
+  async handleRateLimit(attempt) {
+    const delay = Math.min(Math.pow(2, attempt) * 1000, 30000);
+    console.log(`Rate limited, waiting ${delay}ms`);
+    await sleep(delay);
+    return { retry: true, delay };
+  }
+
+  handleInsufficientFunds(error) {
+    console.error('Insufficient funds:', error.data);
+    return { retry: false, fatal: true };
+  }
+
+  handlePostOnlyReject(context) {
+    console.log('Post-only order would take liquidity');
+    return { retry: false, adjustPrice: true };
+  }
+
+  handleGenericError(error) {
+    console.error(`API Error ${error.code}: ${error.message}`);
+    return { retry: false };
+  }
+
+  getMetrics() {
+    return {
+      logger: this.logger.getStats(),
+      metrics: {
+        total: this.metrics.metrics.total,
+        errorRate: this.metrics.getErrorRate(),
+        mostCommon: this.metrics.getMostCommonErrors()
+      }
+    };
+  }
+}
+
+// Usage
+const errorHandler = new DeribitErrorHandler(apiClient);
+
+try {
+  const result = await apiClient.placeOrder(params);
+} catch (error) {
+  const action = await errorHandler.handle(error, {
+    method: 'private/buy',
+    params
+  });
+  
+  if (action.retry) {
+    // Retry the operation
+  } else if (action.fatal) {
+    // Stop and alert
+  }
+}
+```
+
+## Best Practices
+
+### 1. Always Check for Errors
+
+```javascript
+const response = await apiCall();
+if (response.error) {
+  handleError(response.error);
+}
+```
+
+### 2. Implement Exponential Backoff
+
+```javascript
+async function withBackoff(fn, maxRetries = 3) {
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      return await fn();
+    } catch (error) {
+      if (i === maxRetries - 1) throw error;
+      await sleep(Math.pow(2, i) * 1000);
+    }
+  }
+}
+```
+
+### 3. Log All Errors
+
+```javascript
+function logError(error, context) {
+  console.error({
+    code: error.code,
+    message: error.message,
+    context,
+    timestamp: new Date().toISOString()
+  });
+}
+```
+
+### 4. Monitor Error Rates
+
+```javascript
+if (errorMetrics.getErrorRate() > 1) {
+  console.warn('High error rate detected');
+  // Alert or throttle requests
+}
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="API Reference" icon="book" href="/api-reference/introduction">
+    Browse all API methods
+  </Card>
+  <Card title="Request Format" icon="file-code" href="/request-format">
+    Learn about request formatting
+  </Card>
+</CardGroup>

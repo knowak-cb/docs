@@ -1,0 +1,508 @@
+---
+title: "OAuth 2.0"
+description: "Complete guide to OAuth 2.0 authentication with Deribit"
+---
+
+# OAuth 2.0 Authentication
+
+Deribit implements OAuth 2.0 for secure API authentication. This guide covers all supported grant types and implementation details.
+
+## Supported Grant Types
+
+### 1. Client Credentials Grant
+
+Most common for server-to-server authentication.
+
+**Use case**: Trading bots, backend services, automated systems
+
+**Request**:
+```http
+GET /api/v2/public/auth HTTP/1.1
+Host: www.deribit.com
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=client_credentials&
+client_id=YOUR_CLIENT_ID&
+client_secret=YOUR_CLIENT_SECRET
+```
+
+**Response**:
+```json
+{
+  "jsonrpc": "2.0",
+  "result": {
+    "access_token": "eyJ0eXAiOiJKV1QiLCJhbGc...",
+    "expires_in": 31536000,
+    "refresh_token": "eyJ0eXAiOiJKV1QiLCJhbGc...",
+    "scope": "account:read trade:read trade:write",
+    "token_type": "bearer"
+  }
+}
+```
+
+### 2. Refresh Token Grant
+
+Exchange a refresh token for a new access token.
+
+**Use case**: Token renewal without re-authentication
+
+**Request**:
+```http
+GET /api/v2/public/auth HTTP/1.1
+Host: www.deribit.com
+
+grant_type=refresh_token&
+refresh_token=YOUR_REFRESH_TOKEN
+```
+
+**Response**:
+```json
+{
+  "jsonrpc": "2.0",
+  "result": {
+    "access_token": "eyJ0eXAiOiJKV1QiLCJhbGc...",
+    "expires_in": 31536000,
+    "refresh_token": "eyJ0eXAiOiJKV1QiLCJhbGc...",
+    "scope": "account:read trade:read trade:write",
+    "token_type": "bearer"
+  }
+}
+```
+
+## Token Types
+
+### Access Token
+
+**Format**: JWT (JSON Web Token)
+
+**Lifetime**: 1 year (default)
+
+**Usage**: Include in every authenticated request
+
+**Structure**:
+```json
+{
+  "header": {
+    "typ": "JWT",
+    "alg": "RS256"
+  },
+  "payload": {
+    "sub": "user_id",
+    "scope": "account:read trade:write",
+    "exp": 1735689600,
+    "iat": 1704153600
+  }
+}
+```
+
+### Refresh Token
+
+**Format**: JWT
+
+**Lifetime**: 1 year (default)
+
+**Usage**: Obtain new access tokens
+
+**Storage**: Store securely, never expose
+
+## Using Tokens
+
+### HTTP REST API
+
+Include token in `Authorization` header:
+
+```bash
+curl -X GET "https://www.deribit.com/api/v2/private/get_position" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -d "instrument_name=BTC-PERPETUAL"
+```
+
+### WebSocket API
+
+**Method 1**: Authenticate connection
+
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "public/auth",
+  "params": {
+    "grant_type": "client_credentials",
+    "client_id": "YOUR_CLIENT_ID",
+    "client_secret": "YOUR_CLIENT_SECRET"
+  },
+  "id": 1
+}
+```
+
+**Method 2**: Include in each request
+
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "private/get_position",
+  "params": {
+    "instrument_name": "BTC-PERPETUAL",
+    "access_token": "YOUR_ACCESS_TOKEN"
+  },
+  "id": 2
+}
+```
+
+## Token Management
+
+### Token Expiration
+
+Monitor token expiration:
+
+```javascript
+function isTokenExpired(token) {
+  const payload = JSON.parse(atob(token.split('.')[1]));
+  const expirationTime = payload.exp * 1000;
+  return Date.now() >= expirationTime;
+}
+
+function shouldRefresh(token) {
+  const payload = JSON.parse(atob(token.split('.')[1]));
+  const expirationTime = payload.exp * 1000;
+  const timeUntilExpiry = expirationTime - Date.now();
+  const oneDay = 24 * 60 * 60 * 1000;
+  
+  return timeUntilExpiry < oneDay;
+}
+```
+
+### Automatic Refresh
+
+Implement automatic token refresh:
+
+```javascript
+class TokenManager {
+  constructor(clientId, clientSecret) {
+    this.clientId = clientId;
+    this.clientSecret = clientSecret;
+    this.accessToken = null;
+    this.refreshToken = null;
+    this.refreshTimer = null;
+  }
+
+  async authenticate() {
+    const response = await this.request('/public/auth', {
+      grant_type: 'client_credentials',
+      client_id: this.clientId,
+      client_secret: this.clientSecret
+    });
+
+    this.setTokens(response.result);
+    this.scheduleRefresh();
+  }
+
+  async refresh() {
+    const response = await this.request('/public/auth', {
+      grant_type: 'refresh_token',
+      refresh_token: this.refreshToken
+    });
+
+    this.setTokens(response.result);
+    this.scheduleRefresh();
+  }
+
+  setTokens(result) {
+    this.accessToken = result.access_token;
+    this.refreshToken = result.refresh_token;
+  }
+
+  scheduleRefresh() {
+    // Refresh 1 day before expiration
+    const refreshIn = 364 * 24 * 60 * 60 * 1000;
+    
+    if (this.refreshTimer) {
+      clearTimeout(this.refreshTimer);
+    }
+
+    this.refreshTimer = setTimeout(() => {
+      this.refresh();
+    }, refreshIn);
+  }
+
+  async request(endpoint, params) {
+    const url = new URL(`https://www.deribit.com/api/v2${endpoint}`);
+    Object.keys(params).forEach(key => 
+      url.searchParams.append(key, params[key])
+    );
+
+    const response = await fetch(url);
+    return response.json();
+  }
+
+  getAccessToken() {
+    return this.accessToken;
+  }
+}
+```
+
+## Scopes and Permissions
+
+### Understanding Scopes
+
+Scopes define what actions an access token can perform:
+
+```json
+{
+  "scope": "account:read trade:read trade:write wallet:read"
+}
+```
+
+### Scope Hierarchy
+
+| Scope | Includes |
+|-------|----------|
+| `account:read_write` | `account:read` |
+| `trade:write` | `trade:read` |
+| `wallet:write` | `wallet:read` |
+
+### Checking Token Scopes
+
+```javascript
+function hasScope(token, requiredScope) {
+  const payload = JSON.parse(atob(token.split('.')[1]));
+  const scopes = payload.scope.split(' ');
+  return scopes.includes(requiredScope);
+}
+
+// Usage
+if (hasScope(accessToken, 'trade:write')) {
+  // Can place orders
+}
+```
+
+## Security Considerations
+
+### 1. Token Storage
+
+**Browser**:
+```javascript
+// Use sessionStorage (cleared on tab close)
+sessionStorage.setItem('access_token', token);
+
+// Or encrypted localStorage
+const encrypted = encrypt(token, encryptionKey);
+localStorage.setItem('access_token', encrypted);
+```
+
+**Node.js**:
+```javascript
+// Environment variables
+process.env.ACCESS_TOKEN = token;
+
+// Or secure key-value store
+await keyStore.set('access_token', token, { encrypt: true });
+```
+
+### 2. Token Transmission
+
+Always use HTTPS/WSS:
+```javascript
+// ✅ Secure
+const url = 'https://www.deribit.com/api/v2';
+
+// ❌ Insecure
+const url = 'http://www.deribit.com/api/v2';
+```
+
+### 3. Token Revocation
+
+Revoke tokens when:
+- User logs out
+- Suspicious activity detected
+- Token compromised
+- Application shutdown
+
+```javascript
+async function logout() {
+  // Clear tokens
+  this.accessToken = null;
+  this.refreshToken = null;
+  
+  // Clear storage
+  sessionStorage.removeItem('access_token');
+  
+  // Cancel refresh timer
+  if (this.refreshTimer) {
+    clearTimeout(this.refreshTimer);
+  }
+}
+```
+
+### 4. Error Handling
+
+Handle authentication errors:
+
+```javascript
+async function makeRequest(endpoint, params) {
+  try {
+    const response = await fetch(endpoint, {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`
+      },
+      body: JSON.stringify(params)
+    });
+
+    const data = await response.json();
+
+    if (data.error) {
+      if (data.error.code === 13009) {
+        // Token expired - refresh
+        await tokenManager.refresh();
+        return makeRequest(endpoint, params);
+      }
+      throw new Error(data.error.message);
+    }
+
+    return data.result;
+  } catch (error) {
+    console.error('Request failed:', error);
+    throw error;
+  }
+}
+```
+
+## Complete Example
+
+```javascript
+const WebSocket = require('ws');
+
+class DeribitClient {
+  constructor(clientId, clientSecret, isTest = false) {
+    this.clientId = clientId;
+    this.clientSecret = clientSecret;
+    this.baseUrl = isTest 
+      ? 'wss://test.deribit.com/ws/api/v2'
+      : 'wss://www.deribit.com/ws/api/v2';
+    this.ws = null;
+    this.accessToken = null;
+    this.requestId = 1;
+  }
+
+  connect() {
+    return new Promise((resolve, reject) => {
+      this.ws = new WebSocket(this.baseUrl);
+
+      this.ws.on('open', async () => {
+        await this.authenticate();
+        resolve();
+      });
+
+      this.ws.on('message', (data) => {
+        const message = JSON.parse(data);
+        this.handleMessage(message);
+      });
+
+      this.ws.on('error', reject);
+    });
+  }
+
+  async authenticate() {
+    return this.request('public/auth', {
+      grant_type: 'client_credentials',
+      client_id: this.clientId,
+      client_secret: this.clientSecret
+    }).then(result => {
+      this.accessToken = result.access_token;
+      console.log('Authenticated successfully');
+    });
+  }
+
+  request(method, params = {}) {
+    return new Promise((resolve, reject) => {
+      const id = this.requestId++;
+      
+      this.ws.send(JSON.stringify({
+        jsonrpc: '2.0',
+        method,
+        params,
+        id
+      }));
+
+      const handler = (data) => {
+        const message = JSON.parse(data);
+        if (message.id === id) {
+          this.ws.removeListener('message', handler);
+          if (message.error) {
+            reject(message.error);
+          } else {
+            resolve(message.result);
+          }
+        }
+      };
+
+      this.ws.on('message', handler);
+    });
+  }
+
+  async buy(instrument, amount, price) {
+    return this.request('private/buy', {
+      instrument_name: instrument,
+      amount,
+      type: 'limit',
+      price,
+      access_token: this.accessToken
+    });
+  }
+
+  handleMessage(message) {
+    if (message.method === 'subscription') {
+      console.log('Subscription update:', message.params);
+    }
+  }
+}
+
+// Usage
+const client = new DeribitClient('CLIENT_ID', 'CLIENT_SECRET', true);
+await client.connect();
+const order = await client.buy('BTC-PERPETUAL', 10, 50000);
+console.log('Order placed:', order);
+```
+
+## Troubleshooting
+
+### Invalid Grant
+
+**Error**: `invalid_grant`
+
+**Causes**:
+- Invalid client credentials
+- Expired refresh token
+- Revoked API key
+
+**Solution**: Re-authenticate with client credentials
+
+### Insufficient Scope
+
+**Error**: `insufficient_scope`
+
+**Causes**:
+- Token lacks required permission
+- API key doesn't have necessary scope
+
+**Solution**: Create new API key with correct permissions
+
+### Token Expired
+
+**Error**: `token_expired`
+
+**Causes**:
+- Access token expired
+- System clock skew
+
+**Solution**: Use refresh token to get new access token
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="API Keys" icon="key" href="/api-keys">
+    Learn about API key management
+  </Card>
+  <Card title="JSON-RPC" icon="bolt" href="/overview">
+    Learn about JSON-RPC protocol
+  </Card>
+</CardGroup>

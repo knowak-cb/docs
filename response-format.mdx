@@ -1,0 +1,597 @@
+---
+title: "Response Format"
+description: "Detailed JSON-RPC response format specification"
+---
+
+# Response Format
+
+Complete specification for JSON-RPC 2.0 responses from the Deribit API.
+
+## Success Response
+
+```json
+{
+  "jsonrpc": "2.0",
+  "result": {
+    "instrument_name": "BTC-PERPETUAL",
+    "kind": "future",
+    "base_currency": "BTC"
+  },
+  "usIn": 1704153600000000,
+  "usOut": 1704153600001234,
+  "usDiff": 1234,
+  "id": 42
+}
+```
+
+## Error Response
+
+```json
+{
+  "jsonrpc": "2.0",
+  "error": {
+    "code": 10009,
+    "message": "invalid_argument",
+    "data": {
+      "reason": "invalid instrument_name",
+      "param": "instrument_name"
+    }
+  },
+  "usIn": 1704153600000000,
+  "usOut": 1704153600001234,
+  "usDiff": 1234,
+  "id": 42
+}
+```
+
+## Field Specifications
+
+### jsonrpc (Always Present)
+
+**Type**: `string`
+
+**Value**: Always `"2.0"`
+
+```json
+{
+  "jsonrpc": "2.0"
+}
+```
+
+### result (Success Only)
+
+**Type**: `any` (depends on method)
+
+**Contains**: The method's return value
+
+```json
+{
+  "result": 1704153600000
+}
+```
+
+### error (Error Only)
+
+**Type**: `object`
+
+**Structure**:
+```json
+{
+  "error": {
+    "code": 10009,
+    "message": "invalid_argument",
+    "data": {
+      "reason": "detailed error description",
+      "param": "parameter_name"
+    }
+  }
+}
+```
+
+### Timing Fields
+
+**usIn**: Request received timestamp (microseconds)
+
+**usOut**: Response sent timestamp (microseconds)
+
+**usDiff**: Processing time (microseconds)
+
+```json
+{
+  "usIn": 1704153600000000,
+  "usOut": 1704153600001234,
+  "usDiff": 1234
+}
+```
+
+### id (Always Present)
+
+**Type**: `number` or `string`
+
+**Value**: Matches the request ID
+
+```json
+{
+  "id": 42
+}
+```
+
+## Response Types by Method
+
+### Scalar Results
+
+Simple value responses:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "result": 1704153600000,
+  "id": 1
+}
+```
+
+### Object Results
+
+Single object responses:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "result": {
+    "equity": 1.5,
+    "balance": 1.5,
+    "currency": "BTC"
+  },
+  "id": 1
+}
+```
+
+### Array Results
+
+List of items:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "result": [
+    {
+      "instrument_name": "BTC-PERPETUAL",
+      "kind": "future"
+    },
+    {
+      "instrument_name": "BTC-31MAY24",
+      "kind": "future"
+    }
+  ],
+  "id": 1
+}
+```
+
+### Paginated Results
+
+Results with pagination info:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "result": {
+    "trades": [
+      {
+        "trade_id": "12345",
+        "price": 50000,
+        "amount": 10
+      }
+    ],
+    "has_more": true
+  },
+  "id": 1
+}
+```
+
+## Batch Responses
+
+Response to batch request:
+
+```json
+[
+  {
+    "jsonrpc": "2.0",
+    "result": 1704153600000,
+    "id": 1
+  },
+  {
+    "jsonrpc": "2.0",
+    "result": [
+      {
+        "instrument_name": "BTC-PERPETUAL"
+      }
+    ],
+    "id": 2
+  },
+  {
+    "jsonrpc": "2.0",
+    "error": {
+      "code": 10004,
+      "message": "not_found"
+    },
+    "id": 3
+  }
+]
+```
+
+## Notification Format
+
+Server-initiated messages (no `id` field):
+
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "subscription",
+  "params": {
+    "channel": "book.BTC-PERPETUAL.100ms",
+    "data": {
+      "timestamp": 1704153600000,
+      "instrument_name": "BTC-PERPETUAL",
+      "bids": [[50000, 100]],
+      "asks": [[50100, 150]]
+    }
+  }
+}
+```
+
+## Timing Analysis
+
+### Understanding Timing Fields
+
+```javascript
+function analyzeTiming(response) {
+  const processingTimeMs = response.usDiff / 1000;
+  const requestTime = new Date(response.usIn / 1000);
+  const responseTime = new Date(response.usOut / 1000);
+  
+  return {
+    processingTime: `${processingTimeMs}ms`,
+    requestTime: requestTime.toISOString(),
+    responseTime: responseTime.toISOString(),
+    isSlowRequest: processingTimeMs > 100
+  };
+}
+
+// Usage
+const analysis = analyzeTiming(response);
+console.log(analysis);
+// {
+//   processingTime: "1.234ms",
+//   requestTime: "2024-01-02T00:00:00.000Z",
+//   responseTime: "2024-01-02T00:00:00.001Z",
+//   isSlowRequest: false
+// }
+```
+
+### Performance Monitoring
+
+```javascript
+class PerformanceMonitor {
+  constructor() {
+    this.metrics = [];
+  }
+
+  record(response) {
+    this.metrics.push({
+      method: response.method,
+      processingTime: response.usDiff / 1000,
+      timestamp: response.usOut
+    });
+  }
+
+  getStats() {
+    const times = this.metrics.map(m => m.processingTime);
+    return {
+      count: times.length,
+      avg: times.reduce((a, b) => a + b, 0) / times.length,
+      min: Math.min(...times),
+      max: Math.max(...times),
+      p95: this.percentile(times, 0.95),
+      p99: this.percentile(times, 0.99)
+    };
+  }
+
+  percentile(arr, p) {
+    const sorted = arr.slice().sort((a, b) => a - b);
+    const index = Math.ceil(sorted.length * p) - 1;
+    return sorted[index];
+  }
+}
+```
+
+## Response Validation
+
+### Basic Validation
+
+```javascript
+function validateResponse(response) {
+  const errors = [];
+
+  // Check JSON-RPC version
+  if (response.jsonrpc !== '2.0') {
+    errors.push('Invalid JSON-RPC version');
+  }
+
+  // Check for result or error
+  if (!response.hasOwnProperty('result') && !response.hasOwnProperty('error')) {
+    errors.push('Response must have either result or error');
+  }
+
+  // Check for both result and error
+  if (response.hasOwnProperty('result') && response.hasOwnProperty('error')) {
+    errors.push('Response cannot have both result and error');
+  }
+
+  // Check id field
+  if (response.id === undefined) {
+    errors.push('Missing id field');
+  }
+
+  return {
+    valid: errors.length === 0,
+    errors
+  };
+}
+```
+
+### Type Validation
+
+```javascript
+function validateResultType(response, expectedType) {
+  if (!response.result) {
+    throw new Error('No result in response');
+  }
+
+  const actualType = Array.isArray(response.result) 
+    ? 'array' 
+    : typeof response.result;
+
+  if (actualType !== expectedType) {
+    throw new Error(
+      `Expected ${expectedType}, got ${actualType}`
+    );
+  }
+
+  return true;
+}
+
+// Usage
+validateResultType(response, 'object');
+validateResultType(response, 'array');
+validateResultType(response, 'number');
+```
+
+## Response Processing
+
+### Extract Result
+
+```javascript
+function extractResult(response) {
+  if (response.error) {
+    throw new Error(
+      `API Error ${response.error.code}: ${response.error.message}`
+    );
+  }
+
+  return response.result;
+}
+
+// Usage
+try {
+  const result = extractResult(response);
+  console.log('Success:', result);
+} catch (error) {
+  console.error('Failed:', error.message);
+}
+```
+
+### Handle Pagination
+
+```javascript
+async function fetchAllPages(method, params) {
+  const allResults = [];
+  let hasMore = true;
+  let offset = 0;
+
+  while (hasMore) {
+    const response = await apiCall(method, {
+      ...params,
+      count: 100,
+      offset
+    });
+
+    const result = extractResult(response);
+    allResults.push(...result.trades);
+    
+    hasMore = result.has_more;
+    offset += 100;
+  }
+
+  return allResults;
+}
+```
+
+## Response Examples
+
+### Market Data Response
+
+```json
+{
+  "jsonrpc": "2.0",
+  "result": {
+    "timestamp": 1704153600000,
+    "instrument_name": "BTC-PERPETUAL",
+    "bids": [
+      [50000, 100],
+      [49999, 200]
+    ],
+    "asks": [
+      [50001, 150],
+      [50002, 250]
+    ],
+    "change_id": 12345678,
+    "prev_change_id": 12345677
+  },
+  "usIn": 1704153600000000,
+  "usOut": 1704153600001234,
+  "usDiff": 1234,
+  "id": 1
+}
+```
+
+### Trading Response
+
+```json
+{
+  "jsonrpc": "2.0",
+  "result": {
+    "order": {
+      "order_id": "12345",
+      "order_state": "open",
+      "instrument_name": "BTC-PERPETUAL",
+      "direction": "buy",
+      "amount": 10,
+      "price": 50000,
+      "filled_amount": 0,
+      "average_price": 0,
+      "order_type": "limit",
+      "time_in_force": "good_til_cancelled",
+      "creation_timestamp": 1704153600000,
+      "last_update_timestamp": 1704153600000
+    },
+    "trades": []
+  },
+  "usIn": 1704153600000000,
+  "usOut": 1704153600002345,
+  "usDiff": 2345,
+  "id": 1
+}
+```
+
+### Account Response
+
+```json
+{
+  "jsonrpc": "2.0",
+  "result": {
+    "currency": "BTC",
+    "equity": 1.5,
+    "balance": 1.5,
+    "available_funds": 1.4,
+    "available_withdrawal_funds": 1.4,
+    "initial_margin": 0.1,
+    "maintenance_margin": 0.05,
+    "margin_balance": 1.5,
+    "session_funding": 0.0001,
+    "session_rpl": 0.002,
+    "session_upl": 0.003,
+    "total_pl": 0.005
+  },
+  "usIn": 1704153600000000,
+  "usOut": 1704153600001000,
+  "usDiff": 1000,
+  "id": 1
+}
+```
+
+## Complete Response Handler
+
+```javascript
+class ResponseHandler {
+  constructor() {
+    this.pendingRequests = new Map();
+  }
+
+  registerRequest(id, resolve, reject) {
+    this.pendingRequests.set(id, { resolve, reject });
+  }
+
+  handleResponse(response) {
+    // Validate response
+    const validation = validateResponse(response);
+    if (!validation.valid) {
+      console.error('Invalid response:', validation.errors);
+      return;
+    }
+
+    // Handle notification
+    if (response.id === undefined) {
+      this.handleNotification(response);
+      return;
+    }
+
+    // Get pending request
+    const pending = this.pendingRequests.get(response.id);
+    if (!pending) {
+      console.warn('Received response for unknown request:', response.id);
+      return;
+    }
+
+    // Remove from pending
+    this.pendingRequests.delete(response.id);
+
+    // Log timing
+    this.logTiming(response);
+
+    // Handle error
+    if (response.error) {
+      pending.reject(new Error(
+        `${response.error.code}: ${response.error.message}`
+      ));
+      return;
+    }
+
+    // Resolve with result
+    pending.resolve(response.result);
+  }
+
+  handleNotification(notification) {
+    console.log('Notification:', notification.method, notification.params);
+  }
+
+  logTiming(response) {
+    const ms = response.usDiff / 1000;
+    if (ms > 100) {
+      console.warn(`Slow request (${ms}ms):`, response.id);
+    }
+  }
+
+  handleBatchResponse(responses) {
+    responses.forEach(response => this.handleResponse(response));
+  }
+}
+
+// Usage
+const handler = new ResponseHandler();
+
+// Register request
+const promise = new Promise((resolve, reject) => {
+  handler.registerRequest(1, resolve, reject);
+});
+
+// Handle response
+handler.handleResponse({
+  jsonrpc: '2.0',
+  result: { data: 'value' },
+  id: 1
+});
+
+// Get result
+const result = await promise;
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Error Handling" icon="triangle-exclamation" href="/errors">
+    Learn about error codes and handling
+  </Card>
+  <Card title="API Reference" icon="book" href="/api-reference/introduction">
+    Browse all API methods
+  </Card>
+</CardGroup>

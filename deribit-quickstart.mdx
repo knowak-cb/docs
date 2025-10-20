@@ -1,0 +1,127 @@
+---
+title: "Quickstart Guide"
+description: "Get started with the Deribit API in minutes"
+---
+
+# Quickstart Guide
+
+This guide will help you make your first API call to Deribit.
+
+## Step 1: Get API Credentials
+
+1. Log in to your Deribit account
+2. Navigate to Account → API
+3. Create a new API key with appropriate permissions
+4. Save your **Client ID** and **Client Secret** securely
+
+<Warning>
+Never share your API credentials or commit them to version control.
+</Warning>
+
+## Step 2: Authenticate
+
+Use the `/public/auth` method to get an access token:
+
+```bash
+curl -X GET "https://www.deribit.com/api/v2/public/auth" \
+  -d "client_id=YOUR_CLIENT_ID" \
+  -d "client_secret=YOUR_CLIENT_SECRET" \
+  -d "grant_type=client_credentials"
+```
+
+Response:
+```json
+{
+  "jsonrpc": "2.0",
+  "result": {
+    "access_token": "eyJ0eXAiOiJKV1QiLCJhbGc...",
+    "expires_in": 31536000,
+    "refresh_token": "eyJ0eXAiOiJKV1QiLCJhbGc...",
+    "scope": "account:read trade:read",
+    "token_type": "bearer"
+  }
+}
+```
+
+## Step 3: Make Your First Request
+
+### Get Market Data (Public)
+
+No authentication required for public endpoints:
+
+```bash
+curl -X GET "https://www.deribit.com/api/v2/public/get_instruments?currency=BTC&kind=future"
+```
+
+### Get Account Summary (Private)
+
+Use your access token for private endpoints:
+
+```bash
+curl -X GET "https://www.deribit.com/api/v2/private/get_account_summary?currency=BTC" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+## Step 4: Place a Test Order
+
+```bash
+curl -X GET "https://test.deribit.com/api/v2/private/buy" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -d "instrument_name=BTC-PERPETUAL" \
+  -d "amount=10" \
+  -d "type=limit" \
+  -d "price=50000"
+```
+
+<Info>
+Use `test.deribit.com` for testing. No real funds are at risk on the test environment.
+</Info>
+
+## WebSocket Example
+
+Connect to the WebSocket API for real-time data:
+
+```javascript
+const WebSocket = require('ws');
+const ws = new WebSocket('wss://www.deribit.com/ws/api/v2');
+
+ws.on('open', function open() {
+  // Subscribe to order book
+  ws.send(JSON.stringify({
+    "jsonrpc": "2.0",
+    "method": "public/subscribe",
+    "params": {
+      "channels": ["book.BTC-PERPETUAL.100ms"]
+    },
+    "id": 1
+  }));
+});
+
+ws.on('message', function incoming(data) {
+  console.log(JSON.parse(data));
+});
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Authentication" icon="key" href="/api-keys">
+    Learn about authentication methods
+  </Card>
+  <Card title="JSON-RPC Protocol" icon="code" href="/overview">
+    Understand the JSON-RPC format
+  </Card>
+  <Card title="OAuth 2.0" icon="shield" href="/oauth">
+    Learn about OAuth authentication
+  </Card>
+  <Card title="API Reference" icon="book" href="/api-reference/introduction">
+    Browse API documentation
+  </Card>
+</CardGroup>
+
+## Test Environment
+
+- **Production**: `https://www.deribit.com/api/v2`
+- **Test**: `https://test.deribit.com/api/v2`
+- **WebSocket Production**: `wss://www.deribit.com/ws/api/v2`
+- **WebSocket Test**: `wss://test.deribit.com/ws/api/v2`

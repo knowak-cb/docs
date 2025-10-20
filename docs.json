@@ -48,8 +48,40 @@
         ]
       },
       {
-        "tab": "API Reference",
+        "tab": "Deribit API",
+        "groups": [
+          {
+            "group": "Introduction",
+            "pages": [
+              "welcome",
+              "deribit-quickstart"
+            ]
+          },
+          {
+            "group": "Authentication",
+            "pages": [
+              "api-keys",
+              "oauth"
+            ]
+          },
+          {
+            "group": "JSON-RPC Protocol",
+            "pages": [
+              "overview",
+              "request-format",
+              "response-format",
+              "errors"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "AsyncAPI Reference",
         "asyncapi": "/deribit_asyncapi.json"
+      },
+      {
+        "tab": "OpenAPI Reference",
+        "openapi": "/deribit_openapi.json"
       },
       {
         "tab": "API reference",
