@@ -3,15 +3,51 @@
   "theme": "mint",
   "name": "Mint Starter Kit",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+    "primary": "#0052FF",
+    "light": "#FFFFFF",
+    "dark": "#0A0B0D"
   },
   "favicon": "/favicon.svg",
   "navigation": {
     "tabs": [
       {
-        "tab": "Guides",
+        "tab": "API Overview",
+        "groups": [
+          {
+            "group": "Introduction",
+            "pages": [
+              "welcome",
+              "deribit-quickstart"
+            ]
+          },
+          {
+            "group": "Authentication",
+            "pages": [
+              "api-keys",
+              "oauth"
+            ]
+          },
+          {
+            "group": "JSON-RPC Protocol",
+            "pages": [
+              "overview",
+              "request-format",
+              "response-format",
+              "errors"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Methods",
+        "openapi": "/deribit_openapi.json"
+      },
+      {
+        "tab": "Subscription Channels",
+        "asyncapi": "/deribit_asyncapi.json"
+      },
+      {
+        "tab": "Mintlify Guides",
         "groups": [
           {
             "group": "Getting started",
@@ -48,43 +84,7 @@
         ]
       },
       {
-        "tab": "Deribit API",
-        "groups": [
-          {
-            "group": "Introduction",
-            "pages": [
-              "welcome",
-              "deribit-quickstart"
-            ]
-          },
-          {
-            "group": "Authentication",
-            "pages": [
-              "api-keys",
-              "oauth"
-            ]
-          },
-          {
-            "group": "JSON-RPC Protocol",
-            "pages": [
-              "overview",
-              "request-format",
-              "response-format",
-              "errors"
-            ]
-          }
-        ]
-      },
-      {
-        "tab": "AsyncAPI Reference",
-        "asyncapi": "/deribit_asyncapi.json"
-      },
-      {
-        "tab": "OpenAPI Reference",
-        "openapi": "/deribit_openapi.json"
-      },
-      {
-        "tab": "API reference",
+        "tab": "Mintlify API reference example",
         "groups": [
           {
             "group": "API documentation",
@@ -120,8 +120,8 @@
     }
   },
   "logo": {
-    "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
+    "light": "/logos/deribit_cb_logo_main_black_rgb.svg",
+    "dark": "/logos/deribit_cb_logo_main_white_rgb.svg"
   },
   "navbar": {
     "links": [
