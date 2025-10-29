@@ -1,15 +1,18 @@
-/* schowaj pigułki metod (GET/POST/...) w treści i w nawigacji */
-.method-pill, .method-nav-pill { 
+/* Ukryj pigułki metod (GET/POST/...) w treści i nawigacji */
+.method-pill, 
+.method-nav-pill { 
     display: none !important; 
-  }
-  
-  /* opcjonalnie: wyłącz przycisk "Try it" jeśli JSON-RPC nie ma sensownego playgroundu */
+}
+
+/* Wyłącz przycisk "Try it" dla JSON-RPC */
 .tryit-button { 
     display: none !important; 
-  }
-  
-  /* (opcjonalnie) doprecyzuj nagłówki sekcji API, jeśli zawierały metodę w podtytule */
+}
+
+/* Ukryj podtytuły sekcji API */
 .api-section-heading-subtitle { 
     display: none !important; 
-  }
-  
+}
+
+/* CSS nie ma możliwości sprawdzenia zawartości tekstu (:contains() nie istnieje w CSS) */
+/* Jedyna opcja to JavaScript, ale Mintlify może to blokować */

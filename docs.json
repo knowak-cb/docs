@@ -11,6 +11,15 @@
   "customCss": [
     "/style.css"
   ],
+  "headTags": [
+    {
+      "tag": "script",
+      "attributes": {
+        "src": "/public/replace-query-params.js",
+        "type": "text/javascript"
+      }
+    }
+  ],
   "api": {
     "playground": {
       "display": "none"
