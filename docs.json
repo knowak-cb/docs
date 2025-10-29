@@ -64,7 +64,7 @@
         "asyncapi": "/deribit_asyncapi.json"
       },
       {
-        "tab": "Mintlify Guides",
+        "tab": "FIX API",
         "groups": [
           {
             "group": "Getting started",
@@ -101,7 +101,7 @@
         ]
       },
       {
-        "tab": "Mintlify API reference example",
+        "tab": "RPC Error Codes",
         "groups": [
           {
             "group": "API documentation",
