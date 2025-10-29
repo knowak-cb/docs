@@ -1,0 +1,15 @@
+/* schowaj pigułki metod (GET/POST/...) w treści i w nawigacji */
+.method-pill, .method-nav-pill { 
+    display: none !important; 
+  }
+  
+  /* opcjonalnie: wyłącz przycisk "Try it" jeśli JSON-RPC nie ma sensownego playgroundu */
+.tryit-button { 
+    display: none !important; 
+  }
+  
+  /* (opcjonalnie) doprecyzuj nagłówki sekcji API, jeśli zawierały metodę w podtytule */
+.api-section-heading-subtitle { 
+    display: none !important; 
+  }
+  
