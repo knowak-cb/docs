@@ -56,5 +56,35 @@
             }, 100);
         }
     }
+    
+    // Tag Body sections so CSS can hide them precisely
+    function tagBodySections() {
+        try {
+            var sections = document.querySelectorAll('.api-section');
+            sections.forEach(function(section) {
+                var heading = section.querySelector('h4.api-section-heading-title');
+                if (heading && heading.textContent && heading.textContent.trim().toLowerCase() === 'body') {
+                    section.setAttribute('data-section', 'body');
+                }
+            });
+        } catch (e) {
+            // no-op
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', tagBodySections);
+    } else {
+        tagBodySections();
+    }
+
+    if (typeof MutationObserver !== 'undefined') {
+        var bodyObserver = new MutationObserver(function() {
+            tagBodySections();
+        });
+        if (document.documentElement) {
+            bodyObserver.observe(document.documentElement, { childList: true, subtree: true });
+        }
+    }
 })();
 

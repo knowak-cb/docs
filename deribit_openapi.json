@@ -23964,9 +23964,9 @@
           }
         },
         "required": [
+          "jsonrpc",
           "message",
-          "error",
-          "jsonrpc"
+          "error"
         ],
         "type": "object"
       },

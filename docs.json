@@ -32,6 +32,7 @@
         "groups": [
           {
             "group": "Introduction",
+            "expanded": false,
             "pages": [
               "welcome",
               "deribit-quickstart"
@@ -57,7 +58,242 @@
       },
       {
         "tab": "Methods",
-        "openapi": "/deribit_openapi.json"
+        "openapi": "/deribit_openapi.json",
+        "groups": [
+          {
+            "group": "Methods overview",
+            "pages": [
+              {
+                "group": "Authentication",
+                "pages": [
+                  "api-reference/authentication/get-privatelogout",
+                  "api-reference/authentication/get-publicauth",
+                  "api-reference/authentication/get-publicexchange_token",
+                  "api-reference/authentication/get-publicfork_token"
+                ]
+              },
+              {
+                "group": "Session Management",
+                "pages": [
+                  "api-reference/session-management/get-privatedisable_cancel_on_disconnect",
+                  "api-reference/session-management/get-privateenable_cancel_on_disconnect",
+                  "api-reference/session-management/get-privateget_cancel_on_disconnect",
+                  "api-reference/session-management/get-publicdisable_heartbeat",
+                  "api-reference/session-management/get-publicset_heartbeat"
+                ]
+              },
+              {
+                "group": "Supporting",
+                "pages": [
+                  "api-reference/supporting/get-publicget_time",
+                  "api-reference/supporting/get-publichello",
+                  "api-reference/supporting/get-publicstatus",
+                  "api-reference/supporting/get-publictest"
+                ]
+              },
+              {
+                "group": "Subscription Management",
+                "pages": [
+                  "api-reference/subscription-management/get-privatesubscribe",
+                  "api-reference/subscription-management/get-privateunsubscribe",
+                  "api-reference/subscription-management/get-privateunsubscribe_all",
+                  "api-reference/subscription-management/get-publicsubscribe",
+                  "api-reference/subscription-management/get-publicunsubscribe",
+                  "api-reference/subscription-management/get-publicunsubscribe_all"
+                ]
+              },
+              {
+                "group": "Market Data",
+                "pages": [
+                  "api-reference/market-data/get-publicget_apr_history",
+                  "api-reference/market-data/get-publicget_book_summary_by_currency",
+                  "api-reference/market-data/get-publicget_book_summary_by_instrument",
+                  "api-reference/market-data/get-publicget_contract_size",
+                  "api-reference/market-data/get-publicget_currencies",
+                  "api-reference/market-data/get-publicget_delivery_prices",
+                  "api-reference/market-data/get-publicget_expirations",
+                  "api-reference/market-data/get-publicget_funding_chart_data",
+                  "api-reference/market-data/get-publicget_funding_rate_history",
+                  "api-reference/market-data/get-publicget_funding_rate_value",
+                  "api-reference/market-data/get-publicget_historical_volatility",
+                  "api-reference/market-data/get-publicget_index_price",
+                  "api-reference/market-data/get-publicget_index_price_names",
+                  "api-reference/market-data/get-publicget_instrument",
+                  "api-reference/market-data/get-publicget_instruments",
+                  "api-reference/market-data/get-publicget_last_settlements_by_currency",
+                  "api-reference/market-data/get-publicget_last_settlements_by_instrument",
+                  "api-reference/market-data/get-publicget_last_trades_by_currency",
+                  "api-reference/market-data/get-publicget_last_trades_by_currency_and_time",
+                  "api-reference/market-data/get-publicget_last_trades_by_instrument",
+                  "api-reference/market-data/get-publicget_last_trades_by_instrument_and_time",
+                  "api-reference/market-data/get-publicget_mark_price_history",
+                  "api-reference/market-data/get-publicget_order_book",
+                  "api-reference/market-data/get-publicget_order_book_by_instrument_id",
+                  "api-reference/market-data/get-publicget_supported_index_names",
+                  "api-reference/market-data/get-publicget_trade_volumes",
+                  "api-reference/market-data/get-publicget_tradingview_chart_data",
+                  "api-reference/market-data/get-publicget_volatility_index_data",
+                  "api-reference/market-data/get-publicticker"
+                ]
+              },
+              {
+                "group": "Trading",
+                "pages": [
+                  "api-reference/trading/get-privatebuy",
+                  "api-reference/trading/get-privatecancel",
+                  "api-reference/trading/get-privatecancel_all",
+                  "api-reference/trading/get-privatecancel_all_by_currency",
+                  "api-reference/trading/get-privatecancel_all_by_currency_pair",
+                  "api-reference/trading/get-privatecancel_all_by_instrument",
+                  "api-reference/trading/get-privatecancel_all_by_kind_or_type",
+                  "api-reference/trading/get-privatecancel_by_label",
+                  "api-reference/trading/get-privatecancel_quotes",
+                  "api-reference/trading/get-privateclose_position",
+                  "api-reference/trading/get-privateedit",
+                  "api-reference/trading/get-privateedit_by_label",
+                  "api-reference/trading/get-privateget_margins",
+                  "api-reference/trading/get-privateget_mmp_config",
+                  "api-reference/trading/get-privateget_mmp_status",
+                  "api-reference/trading/get-privateget_open_orders",
+                  "api-reference/trading/get-privateget_open_orders_by_currency",
+                  "api-reference/trading/get-privateget_open_orders_by_instrument",
+                  "api-reference/trading/get-privateget_open_orders_by_label",
+                  "api-reference/trading/get-privateget_order_history_by_currency",
+                  "api-reference/trading/get-privateget_order_history_by_instrument",
+                  "api-reference/trading/get-privateget_order_margin_by_ids",
+                  "api-reference/trading/get-privateget_order_state",
+                  "api-reference/trading/get-privateget_order_state_by_label",
+                  "api-reference/trading/get-privateget_settlement_history_by_currency",
+                  "api-reference/trading/get-privateget_settlement_history_by_instrument",
+                  "api-reference/trading/get-privateget_trigger_order_history",
+                  "api-reference/trading/get-privateget_user_trades_by_currency",
+                  "api-reference/trading/get-privateget_user_trades_by_currency_and_time",
+                  "api-reference/trading/get-privateget_user_trades_by_instrument",
+                  "api-reference/trading/get-privateget_user_trades_by_instrument_and_time",
+                  "api-reference/trading/get-privateget_user_trades_by_order",
+                  "api-reference/trading/get-privatemass_quote",
+                  "api-reference/trading/get-privatemove_positions",
+                  "api-reference/trading/get-privatereset_mmp",
+                  "api-reference/trading/get-privatesell",
+                  "api-reference/trading/get-privateset_mmp_config"
+                ]
+              },
+              {
+                "group": "Combo Books",
+                "pages": [
+                  "api-reference/combo-books/get-privatecreate_combo",
+                  "api-reference/combo-books/get-privateget_leg_prices",
+                  "api-reference/combo-books/get-publicget_combo_details",
+                  "api-reference/combo-books/get-publicget_combo_ids",
+                  "api-reference/combo-books/get-publicget_combos"
+                ]
+              },
+              {
+                "group": "Block Trade",
+                "pages": [
+                  "api-reference/block-trade/get-privateapprove_block_trade",
+                  "api-reference/block-trade/get-privateexecute_block_trade",
+                  "api-reference/block-trade/get-privateget_block_trade",
+                  "api-reference/block-trade/get-privateget_block_trade_requests",
+                  "api-reference/block-trade/get-privateget_block_trades",
+                  "api-reference/block-trade/get-privateget_broker_trade_requests",
+                  "api-reference/block-trade/get-privateget_broker_trades",
+                  "api-reference/block-trade/get-privateget_pending_block_trades",
+                  "api-reference/block-trade/get-privateinvalidate_block_trade_signature",
+                  "api-reference/block-trade/get-privatereject_block_trade",
+                  "api-reference/block-trade/get-privatesimulate_block_trade",
+                  "api-reference/block-trade/get-privateverify_block_trade"
+                ]
+              },
+              {
+                "group": "Block RFQ",
+                "pages": [
+                  "api-reference/block-rfq/get-privateaccept_block_rfq",
+                  "api-reference/block-rfq/get-privateadd_block_rfq_quote",
+                  "api-reference/block-rfq/get-privatecancel_all_block_rfq_quotes",
+                  "api-reference/block-rfq/get-privatecancel_block_rfq",
+                  "api-reference/block-rfq/get-privatecancel_block_rfq_quote",
+                  "api-reference/block-rfq/get-privatecancel_block_rfq_trigger",
+                  "api-reference/block-rfq/get-privatecreate_block_rfq",
+                  "api-reference/block-rfq/get-privateedit_block_rfq_quote",
+                  "api-reference/block-rfq/get-privateget_block_rfq_makers",
+                  "api-reference/block-rfq/get-privateget_block_rfq_quotes",
+                  "api-reference/block-rfq/get-privateget_block_rfq_user_info",
+                  "api-reference/block-rfq/get-privateget_block_rfqs",
+                  "api-reference/block-rfq/get-publicget_block_rfq_trades"
+                ]
+              },
+              {
+                "group": "Wallet",
+                "pages": [
+                  "api-reference/wallet/get-privateadd_to_address_book",
+                  "api-reference/wallet/get-privatecancel_transfer_by_id",
+                  "api-reference/wallet/get-privatecancel_withdrawal",
+                  "api-reference/wallet/get-privatecreate_deposit_address",
+                  "api-reference/wallet/get-privatedelete_address_beneficiary",
+                  "api-reference/wallet/get-privateget_address_beneficiary",
+                  "api-reference/wallet/get-privateget_address_book",
+                  "api-reference/wallet/get-privateget_current_deposit_address",
+                  "api-reference/wallet/get-privateget_deposits",
+                  "api-reference/wallet/get-privateget_reward_eligibility",
+                  "api-reference/wallet/get-privateget_transfers",
+                  "api-reference/wallet/get-privateget_withdrawals",
+                  "api-reference/wallet/get-privatelist_address_beneficiaries",
+                  "api-reference/wallet/get-privateremove_from_address_book",
+                  "api-reference/wallet/get-privatesave_address_beneficiary",
+                  "api-reference/wallet/get-privateset_clearance_originator",
+                  "api-reference/wallet/get-privatesubmit_transfer_between_subaccounts",
+                  "api-reference/wallet/get-privatesubmit_transfer_to_subaccount",
+                  "api-reference/wallet/get-privatesubmit_transfer_to_user",
+                  "api-reference/wallet/get-privateupdate_in_address_book",
+                  "api-reference/wallet/get-privatewithdraw"
+                ]
+              },
+              {
+                "group": "Account Management",
+                "pages": [
+                  "api-reference/account-management/get-privatechange_api_key_name",
+                  "api-reference/account-management/get-privatechange_margin_model",
+                  "api-reference/account-management/get-privatechange_scope_in_api_key",
+                  "api-reference/account-management/get-privatechange_subaccount_name",
+                  "api-reference/account-management/get-privatecreate_api_key",
+                  "api-reference/account-management/get-privatecreate_subaccount",
+                  "api-reference/account-management/get-privatedisable_api_key",
+                  "api-reference/account-management/get-privateedit_api_key",
+                  "api-reference/account-management/get-privateenable_affiliate_program",
+                  "api-reference/account-management/get-privateenable_api_key",
+                  "api-reference/account-management/get-privateget_access_log",
+                  "api-reference/account-management/get-privateget_account_summaries",
+                  "api-reference/account-management/get-privateget_account_summary",
+                  "api-reference/account-management/get-privateget_affiliate_program_info",
+                  "api-reference/account-management/get-privateget_email_language",
+                  "api-reference/account-management/get-privateget_new_announcements",
+                  "api-reference/account-management/get-privateget_position",
+                  "api-reference/account-management/get-privateget_positions",
+                  "api-reference/account-management/get-privateget_subaccounts",
+                  "api-reference/account-management/get-privateget_subaccounts_details",
+                  "api-reference/account-management/get-privateget_transaction_log",
+                  "api-reference/account-management/get-privateget_user_locks",
+                  "api-reference/account-management/get-privatelist_api_keys",
+                  "api-reference/account-management/get-privatelist_custody_accounts",
+                  "api-reference/account-management/get-privatepmesimulate",
+                  "api-reference/account-management/get-privateremove_api_key",
+                  "api-reference/account-management/get-privateremove_subaccount",
+                  "api-reference/account-management/get-privatereset_api_key",
+                  "api-reference/account-management/get-privateset_announcement_as_read",
+                  "api-reference/account-management/get-privateset_disabled_trading_products",
+                  "api-reference/account-management/get-privateset_email_for_subaccount",
+                  "api-reference/account-management/get-privateset_email_language",
+                  "api-reference/account-management/get-privateset_self_trading_config",
+                  "api-reference/account-management/get-privatesimulate_portfolio",
+                  "api-reference/account-management/get-privatetoggle_notifications_from_subaccount",
+                  "api-reference/account-management/get-privatetoggle_subaccount_login",
+                  "api-reference/account-management/get-publicget_announcements"
+                ]
+              }
+            ]
+          }
+        ]
       },
       {
         "tab": "Subscription Channels",
@@ -127,11 +363,6 @@
           "anchor": "Documentation",
           "href": "https://mintlify.com/docs",
           "icon": "book-open-cover"
-        },
-        {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
         }
       ]
     }
@@ -155,15 +386,15 @@
   },
   "contextual": {
     "options": [
-     "copy",
-     "view",
-     "chatgpt",
-     "claude",
-     "perplexity",
-     "mcp",
-     "cursor",
-     "vscode"
-   ]
+      "copy",
+      "view",
+      "chatgpt",
+      "claude",
+      "perplexity",
+      "mcp",
+      "cursor",
+      "vscode"
+    ]
   },
   "footer": {
     "socials": {
