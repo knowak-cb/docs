@@ -1,0 +1,361 @@
+---
+title: "API Reference"
+description: "Complete reference for all Deribit API methods"
+---
+
+# API Reference
+
+Complete documentation for all Deribit API methods, automatically generated from the OpenAPI specification.
+
+## API Categories
+
+### Public Methods
+
+Public methods don't require authentication and provide access to market data and general information.
+
+**Common use cases**:
+- Get market data (order books, trades, prices)
+- Retrieve instrument information
+- Check server time
+- View historical data
+
+<Card title="Browse Public Methods" icon="globe" href="/deribit/api-reference/public">
+  Explore all public API methods
+</Card>
+
+### Private Methods
+
+Private methods require authentication and provide access to account-specific operations.
+
+**Common use cases**:
+- Place and manage orders
+- View account information
+- Manage positions
+- Deposit and withdraw funds
+- View trading history
+
+<Card title="Browse Private Methods" icon="lock" href="/deribit/api-reference/private">
+  Explore all private API methods
+</Card>
+
+### Market Data
+
+Real-time and historical market data methods.
+
+**Available data**:
+- Order books
+- Trade history
+- Index prices
+- Funding rates
+- Volatility data
+
+<Card title="Browse Market Data" icon="chart-line" href="/deribit/api-reference/market-data">
+  Explore market data methods
+</Card>
+
+### Trading
+
+Methods for order management and trading operations.
+
+**Features**:
+- Place orders (market, limit, stop)
+- Cancel and modify orders
+- View open orders
+- Get order history
+- Manage positions
+
+<Card title="Browse Trading Methods" icon="chart-candlestick" href="/deribit/api-reference/trading">
+  Explore trading methods
+</Card>
+
+### Account Management
+
+Methods for managing your account settings and information.
+
+**Features**:
+- View account summary
+- Get balance information
+- Manage API keys
+- Configure settings
+- View transaction history
+
+<Card title="Browse Account Methods" icon="user" href="/deribit/api-reference/account">
+  Explore account management methods
+</Card>
+
+### Wallet Operations
+
+Methods for managing deposits, withdrawals, and transfers.
+
+**Features**:
+- Generate deposit addresses
+- Withdraw funds
+- View transaction history
+- Check balances
+- Transfer between accounts
+
+<Card title="Browse Wallet Methods" icon="wallet" href="/deribit/api-reference/wallet">
+  Explore wallet methods
+</Card>
+
+### Session Management
+
+Methods for managing WebSocket connections and sessions.
+
+**Features**:
+- Enable/disable heartbeat
+- Set connection preferences
+- Manage subscriptions
+- Handle disconnections
+
+<Card title="Browse Session Methods" icon="plug" href="/deribit/api-reference/session">
+  Explore session management methods
+</Card>
+
+### Subscriptions
+
+Methods for subscribing to real-time data feeds.
+
+**Available channels**:
+- Order book updates
+- Trade feeds
+- User order updates
+- Position changes
+- Account notifications
+
+<Card title="Browse Subscription Methods" icon="bell" href="/deribit/api-reference/subscriptions">
+  Explore subscription methods
+</Card>
+
+## Method Naming Convention
+
+All methods follow a consistent naming pattern:
+
+```
+{visibility}/{action}_{resource}
+```
+
+**Examples**:
+- `public/get_instruments` - Get list of instruments
+- `private/buy` - Place a buy order
+- `private/get_account_summary` - Get account information
+- `public/subscribe` - Subscribe to data feed
+
+## Request Format
+
+All methods use JSON-RPC 2.0 format:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "public/get_instruments",
+  "params": {
+    "currency": "BTC",
+    "kind": "future"
+  },
+  "id": 1
+}
+```
+
+## Response Format
+
+Successful responses include the result:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "result": {
+    "data": "..."
+  },
+  "usIn": 1704153600000000,
+  "usOut": 1704153600001234,
+  "usDiff": 1234,
+  "id": 1
+}
+```
+
+Error responses include error details:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "error": {
+    "code": 10009,
+    "message": "invalid_argument",
+    "data": {
+      "reason": "invalid parameter",
+      "param": "currency"
+    }
+  },
+  "id": 1
+}
+```
+
+## Authentication
+
+### Public Methods
+
+No authentication required:
+
+```bash
+curl "https://www.deribit.com/api/v2/public/get_time"
+```
+
+### Private Methods
+
+Require access token:
+
+```bash
+curl "https://www.deribit.com/api/v2/private/get_account_summary?currency=BTC" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+## Rate Limits
+
+| Method Type | Rate Limit |
+|------------|------------|
+| Public (non-matching) | 20 requests/second |
+| Public (matching engine) | 10 requests/second |
+| Private (non-trading) | 20 requests/second |
+| Private (trading) | 10 requests/second |
+
+<Warning>
+Exceeding rate limits will result in temporary IP bans (1-30 minutes).
+</Warning>
+
+## Environments
+
+### Production
+- **REST API**: `https://www.deribit.com/api/v2`
+- **WebSocket**: `wss://www.deribit.com/ws/api/v2`
+
+### Test Environment
+- **REST API**: `https://test.deribit.com/api/v2`
+- **WebSocket**: `wss://test.deribit.com/ws/api/v2`
+
+<Info>
+Always test your integration on the test environment before moving to production.
+</Info>
+
+## Quick Examples
+
+### Get Server Time
+
+```bash
+curl "https://www.deribit.com/api/v2/public/get_time"
+```
+
+### Get Instruments
+
+```bash
+curl "https://www.deribit.com/api/v2/public/get_instruments?currency=BTC&kind=future"
+```
+
+### Get Order Book
+
+```bash
+curl "https://www.deribit.com/api/v2/public/get_order_book?instrument_name=BTC-PERPETUAL&depth=10"
+```
+
+### Place Order (Authenticated)
+
+```bash
+curl "https://www.deribit.com/api/v2/private/buy" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -d "instrument_name=BTC-PERPETUAL" \
+  -d "amount=10" \
+  -d "type=limit" \
+  -d "price=50000"
+```
+
+### Get Account Summary (Authenticated)
+
+```bash
+curl "https://www.deribit.com/api/v2/private/get_account_summary?currency=BTC" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+## WebSocket Example
+
+```javascript
+const WebSocket = require('ws');
+const ws = new WebSocket('wss://www.deribit.com/ws/api/v2');
+
+ws.on('open', function open() {
+  // Get server time
+  ws.send(JSON.stringify({
+    "jsonrpc": "2.0",
+    "method": "public/get_time",
+    "id": 1
+  }));
+  
+  // Subscribe to order book
+  ws.send(JSON.stringify({
+    "jsonrpc": "2.0",
+    "method": "public/subscribe",
+    "params": {
+      "channels": ["book.BTC-PERPETUAL.100ms"]
+    },
+    "id": 2
+  }));
+});
+
+ws.on('message', function incoming(data) {
+  const response = JSON.parse(data);
+  console.log(response);
+});
+```
+
+## Error Handling
+
+Always check for errors in responses:
+
+```javascript
+const response = await apiCall();
+
+if (response.error) {
+  console.error(`Error ${response.error.code}: ${response.error.message}`);
+  // Handle error
+} else {
+  console.log('Success:', response.result);
+}
+```
+
+## Best Practices
+
+1. **Use WebSocket for Trading**: Lower latency and better performance
+2. **Implement Rate Limiting**: Respect API rate limits
+3. **Handle Errors Properly**: Implement robust error handling
+4. **Use Test Environment**: Test thoroughly before production
+5. **Monitor Performance**: Track response times and error rates
+6. **Keep Credentials Secure**: Never expose API keys
+
+## Getting Help
+
+- **Documentation**: Browse method-specific documentation
+- **Support**: [support@deribit.com](mailto:support@deribit.com)
+- **Community**: [Telegram](https://t.me/deribit)
+- **Status**: [status.deribit.com](https://status.deribit.com)
+
+## Next Steps
+
+<CardGroup cols={3}>
+  <Card title="Public Methods" icon="globe" href="/deribit/api-reference/public">
+    Browse public API methods
+  </Card>
+  <Card title="Private Methods" icon="lock" href="/deribit/api-reference/private">
+    Browse private API methods
+  </Card>
+  <Card title="Trading" icon="chart-candlestick" href="/deribit/api-reference/trading">
+    Explore trading methods
+  </Card>
+  <Card title="Market Data" icon="chart-line" href="/deribit/api-reference/market-data">
+    Get market data
+  </Card>
+  <Card title="Account" icon="user" href="/deribit/api-reference/account">
+    Manage your account
+  </Card>
+  <Card title="Wallet" icon="wallet" href="/deribit/api-reference/wallet">
+    Wallet operations
+  </Card>
+</CardGroup>

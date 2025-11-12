@@ -3,89 +3,329 @@
   "theme": "mint",
   "name": "Mint Starter Kit",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+    "primary": "#0052FF",
+    "light": "#FFFFFF",
+    "dark": "#0A0B0D"
   },
-  "favicon": "/favicon.svg",
+  "customCss": [
+    "/public/style.css"
+  ],
+  "headTags": [
+    {
+      "tag": "script",
+      "attributes": {
+        "src": "/public/replace-query-params.js",
+        "type": "text/javascript"
+      }
+    }
+  ],
+  "api": {
+    "playground": {
+      "display": "none"
+    }
+  },
   "navigation": {
     "tabs": [
       {
-        "tab": "Guides",
+        "tab": "API Overview",
         "groups": [
           {
-            "group": "Getting started",
+            "group": "Introduction",
+            "expanded": false,
             "pages": [
-              "index",
-              "quickstart",
-              "development"
+              "mdfx_files/welcome",
+              "mdfx_files/deribit-quickstart"
             ]
           },
           {
-            "group": "Customization",
+            "group": "Authentication",
             "pages": [
-              "essentials/settings",
-              "essentials/navigation"
+              "mdfx_files/api-keys",
+              "mdfx_files/oauth"
             ]
           },
           {
-            "group": "Writing content",
+            "group": "JSON-RPC Protocol",
             "pages": [
-              "essentials/markdown",
-              "essentials/code",
-              "essentials/images",
-              "essentials/reusable-snippets"
-            ]
-          },
-          {
-            "group": "AI tools",
-            "pages": [
-              "ai-tools/cursor",
-              "ai-tools/claude-code",
-              "ai-tools/windsurf"
+              "mdfx_files/overview",
+              "mdfx_files/request-format",
+              "mdfx_files/response-format",
+              "mdfx_files/errors"
             ]
           }
         ]
       },
       {
-        "tab": "API reference",
+        "tab": "Methods",
+        "openapi": "specifications/deribit_openapi.json",
         "groups": [
           {
-            "group": "API documentation",
+            "group": "Methods overview",
             "pages": [
-              "api-reference/introduction"
+              {
+                "group": "Authentication",
+                "pages": [
+                  "GET /public/auth",
+                  "GET /public/exchange_token",
+                  "GET /public/fork_token",
+                  "GET /private/logout"
+                ]
+              },
+              {
+                "group": "Account Management",
+                "pages": [
+                  "GET /private/change_api_key_name",
+                  "GET /private/change_margin_model",
+                  "GET /private/change_scope_in_api_key",
+                  "GET /private/change_subaccount_name",
+                  "GET /private/create_api_key",
+                  "GET /private/create_subaccount",
+                  "GET /private/disable_api_key",
+                  "GET /private/edit_api_key",
+                  "GET /private/enable_affiliate_program",
+                  "GET /private/enable_api_key",
+                  "GET /private/get_access_log",
+                  "GET /private/get_account_summaries",
+                  "GET /private/get_account_summary",
+                  "GET /private/get_affiliate_program_info",
+                  "GET /private/get_email_language",
+                  "GET /private/get_new_announcements",
+                  "GET /private/get_position",
+                  "GET /private/get_positions",
+                  "GET /private/get_subaccounts",
+                  "GET /private/get_subaccounts_details",
+                  "GET /private/get_transaction_log",
+                  "GET /private/get_user_locks",
+                  "GET /private/list_api_keys",
+                  "GET /private/list_custody_accounts",
+                  "GET /private/pme/simulate",
+                  "GET /private/remove_api_key",
+                  "GET /private/remove_subaccount",
+                  "GET /private/reset_api_key",
+                  "GET /private/set_announcement_as_read",
+                  "GET /private/set_disabled_trading_products",
+                  "GET /private/set_email_for_subaccount",
+                  "GET /private/set_email_language",
+                  "GET /private/set_self_trading_config",
+                  "GET /private/simulate_portfolio",
+                  "GET /private/toggle_notifications_from_subaccount",
+                  "GET /private/toggle_subaccount_login",
+                  "GET /public/get_announcements"
+                ]
+              },
+              {
+                "group": "Block RFQ",
+                "pages": [
+                  "GET /private/accept_block_rfq",
+                  "GET /private/add_block_rfq_quote",
+                  "GET /private/cancel_all_block_rfq_quotes",
+                  "GET /private/cancel_block_rfq",
+                  "GET /private/cancel_block_rfq_quote",
+                  "GET /private/cancel_block_rfq_trigger",
+                  "GET /private/create_block_rfq",
+                  "GET /private/edit_block_rfq_quote",
+                  "GET /private/get_block_rfq_makers",
+                  "GET /private/get_block_rfq_quotes",
+                  "GET /private/get_block_rfq_user_info",
+                  "GET /private/get_block_rfqs",
+                  "GET /public/get_block_rfq_trades"
+                ]
+              },
+              {
+                "group": "Block Trade",
+                "pages": [
+                  "GET /private/approve_block_trade",
+                  "GET /private/execute_block_trade",
+                  "GET /private/get_block_trade",
+                  "GET /private/get_block_trade_requests",
+                  "GET /private/get_block_trades",
+                  "GET /private/get_broker_trade_requests",
+                  "GET /private/get_broker_trades",
+                  "GET /private/get_pending_block_trades",
+                  "GET /private/invalidate_block_trade_signature",
+                  "GET /private/reject_block_trade",
+                  "GET /private/simulate_block_trade",
+                  "GET /private/verify_block_trade"
+                ]
+              },
+              {
+                "group": "Combo Books",
+                "pages": [
+                  "GET /private/create_combo",
+                  "GET /private/get_leg_prices",
+                  "GET /public/get_combo_details",
+                  "GET /public/get_combo_ids",
+                  "GET /public/get_combos"
+                ]
+              },
+              {
+                "group": "Market Data",
+                "pages": [
+                  "GET /public/get_apr_history",
+                  "GET /public/get_book_summary_by_currency",
+                  "GET /public/get_book_summary_by_instrument",
+                  "GET /public/get_contract_size",
+                  "GET /public/get_currencies",
+                  "GET /public/get_delivery_prices",
+                  "GET /public/get_expirations",
+                  "GET /public/get_funding_chart_data",
+                  "GET /public/get_funding_rate_history",
+                  "GET /public/get_funding_rate_value",
+                  "GET /public/get_historical_volatility",
+                  "GET /public/get_index_price",
+                  "GET /public/get_index_price_names",
+                  "GET /public/get_instrument",
+                  "GET /public/get_instruments",
+                  "GET /public/get_last_settlements_by_currency",
+                  "GET /public/get_last_settlements_by_instrument",
+                  "GET /public/get_last_trades_by_currency",
+                  "GET /public/get_last_trades_by_currency_and_time",
+                  "GET /public/get_last_trades_by_instrument",
+                  "GET /public/get_last_trades_by_instrument_and_time",
+                  "GET /public/get_mark_price_history",
+                  "GET /public/get_order_book",
+                  "GET /public/get_order_book_by_instrument_id",
+                  "GET /public/get_supported_index_names",
+                  "GET /public/get_trade_volumes",
+                  "GET /public/get_tradingview_chart_data",
+                  "GET /public/get_volatility_index_data",
+                  "GET /public/ticker"
+                ]
+              },
+              {
+                "group": "Session Management",
+                "pages": [
+                  "GET /private/disable_cancel_on_disconnect",
+                  "GET /private/enable_cancel_on_disconnect",
+                  "GET /private/get_cancel_on_disconnect",
+                  "GET /public/disable_heartbeat",
+                  "GET /public/set_heartbeat"
+                ]
+              },
+              {
+                "group": "Subscription Management",
+                "pages": [
+                  "GET /private/subscribe",
+                  "GET /private/unsubscribe",
+                  "GET /private/unsubscribe_all",
+                  "GET /public/subscribe",
+                  "GET /public/unsubscribe",
+                  "GET /public/unsubscribe_all"
+                ]
+              },
+              {
+                "group": "Supporting",
+                "pages": [
+                  "GET /public/get_time",
+                  "GET /public/hello",
+                  "GET /public/status",
+                  "GET /public/test"
+                ]
+              },
+              {
+                "group": "Trading",
+                "pages": [
+                  "GET /private/buy",
+                  "GET /private/cancel",
+                  "GET /private/cancel_all",
+                  "GET /private/cancel_all_by_currency",
+                  "GET /private/cancel_all_by_currency_pair",
+                  "GET /private/cancel_all_by_instrument",
+                  "GET /private/cancel_all_by_kind_or_type",
+                  "GET /private/cancel_by_label",
+                  "GET /private/cancel_quotes",
+                  "GET /private/close_position",
+                  "GET /private/edit",
+                  "GET /private/edit_by_label",
+                  "GET /private/get_margins",
+                  "GET /private/get_mmp_config",
+                  "GET /private/get_mmp_status",
+                  "GET /private/get_open_orders",
+                  "GET /private/get_open_orders_by_currency",
+                  "GET /private/get_open_orders_by_instrument",
+                  "GET /private/get_open_orders_by_label",
+                  "GET /private/get_order_history_by_currency",
+                  "GET /private/get_order_history_by_instrument",
+                  "GET /private/get_order_margin_by_ids",
+                  "GET /private/get_order_state",
+                  "GET /private/get_order_state_by_label",
+                  "GET /private/get_settlement_history_by_currency",
+                  "GET /private/get_settlement_history_by_instrument",
+                  "GET /private/get_trigger_order_history",
+                  "GET /private/get_user_trades_by_currency",
+                  "GET /private/get_user_trades_by_currency_and_time",
+                  "GET /private/get_user_trades_by_instrument",
+                  "GET /private/get_user_trades_by_instrument_and_time",
+                  "GET /private/get_user_trades_by_order",
+                  "GET /private/mass_quote",
+                  "GET /private/move_positions",
+                  "GET /private/reset_mmp",
+                  "GET /private/sell",
+                  "GET /private/set_mmp_config"
+                ]
+              },
+              {
+                "group": "Wallet",
+                "pages": [
+                  "GET /private/add_to_address_book",
+                  "GET /private/cancel_transfer_by_id",
+                  "GET /private/cancel_withdrawal",
+                  "GET /private/create_deposit_address",
+                  "GET /private/delete_address_beneficiary",
+                  "GET /private/get_address_beneficiary",
+                  "GET /private/get_address_book",
+                  "GET /private/get_current_deposit_address",
+                  "GET /private/get_deposits",
+                  "GET /private/get_reward_eligibility",
+                  "GET /private/get_transfers",
+                  "GET /private/get_withdrawals",
+                  "GET /private/list_address_beneficiaries",
+                  "GET /private/remove_from_address_book",
+                  "GET /private/save_address_beneficiary",
+                  "GET /private/set_clearance_originator",
+                  "GET /private/submit_transfer_between_subaccounts",
+                  "GET /private/submit_transfer_to_subaccount",
+                  "GET /private/submit_transfer_to_user",
+                  "GET /private/update_in_address_book",
+                  "GET /private/withdraw"
+                ]
+              }
             ]
-          },
+          }
+        ]
+      },
+      {
+        "tab": "Subscription Channels",
+        "asyncapi": "specifications/deribit_asyncapi.json"
+      },
+      {
+        "tab": "FIX API",
+        "groups": [
           {
-            "group": "Endpoint examples",
+            "group": "FIX API Documentation",
             "pages": [
-              "api-reference/endpoint/get",
-              "api-reference/endpoint/create",
-              "api-reference/endpoint/delete",
-              "api-reference/endpoint/webhook"
+              "mdfx_files/fix-api"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Best Practices",
+        "groups": [
+          {
+            "group": "Connection Management",
+            "expanded": true,
+            "pages": [
+              "mdfx_files/connection-management-best-practices"
             ]
           }
         ]
       }
-    ],
-    "global": {
-      "anchors": [
-        {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
-        },
-        {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
-        }
-      ]
-    }
+    ]
   },
   "logo": {
-    "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
+    "light": "/logos/deribit_cb_logo_main_black_rgb.svg",
+    "dark": "/logos/deribit_cb_logo_main_white_rgb.svg"
   },
   "navbar": {
     "links": [
@@ -102,15 +342,15 @@
   },
   "contextual": {
     "options": [
-     "copy",
-     "view",
-     "chatgpt",
-     "claude",
-     "perplexity",
-     "mcp",
-     "cursor",
-     "vscode"
-   ]
+      "copy",
+      "view",
+      "chatgpt",
+      "claude",
+      "perplexity",
+      "mcp",
+      "cursor",
+      "vscode"
+    ]
   },
   "footer": {
     "socials": {

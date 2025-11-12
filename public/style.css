@@ -1,0 +1,22 @@
+.method-pill, 
+.method-nav-pill { 
+    display: none !important; 
+}
+
+.tryit-button { 
+    display: none !important; 
+}
+
+.api-section-heading-subtitle { 
+    display: none !important; 
+}
+
+/* Hide only the Request Body section (more precise targeting) */
+.api-section[data-section="body"] {
+    display: none !important;
+}
+
+/* Make sidebar group names bolder */
+li[data-title] button.group > div {
+    font-weight: 700 !important;
+}

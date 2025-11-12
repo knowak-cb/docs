@@ -1,0 +1,1873 @@
+Deribit FIX API is a subset of FIX version 4.4, but also includes some tags from
+5.0 version and several custom tags. Deribit uses the standard header and
+trailer structure for all messages. To enable the API, sign in and go to
+**Account > Security > API** Tab and use the checkbox. 'Client Secret' is the
+user's secret key provided by Deribit. **Important Note: Do not reveal to
+anybody your 'Client Secret', as it can be used to gain full control over your
+account.**
+
+**⚠️ IMPORTANT ANNOUNCEMENT**
+Due to recent technical issues with one of our service providers, we have updated the FIX public endpoint.
+The FIX endpoint will no longer be accessible over the internet via www.deribit.com.
+Going forward, customers should connect using fix.deribit.com for production and fix-test.deribit.com for test environment.
+
+The FIX server can be reached at `fix.deribit.com:9881` (raw tcp) or
+`fix.deribit.com:9883` (ssl). The FIX server for the test network can be reached
+at `fix-test.deribit.com:9881` (raw tcp) or `fix-test.deribit.com:9883` (ssl).
+
+Each request message can include:
+
+| Tag | Name | Type | Required | Comments |
+|---|---|---|---|---|
+| 8 | `BeginString` | String | Yes | Identifies beginning of new message and protocol version. Must always be first in the message |
+| 9 | `BodyLength` | Length | Yes | Message length in bytes, not including fields `BeginString`(`8`), `BodyLength`(`9`) and `CheckSum`(`10`). The length must be calculated by counting the number of octets in the message up to and including the end of field delimiter (Start of Heading) of the field immediately preceding the `CheckSum`(`10`) field. Must always be the second in the message.
+
+Please refer to [FIX specification](https://www.fixtrading.org/standards/tagvalue-online/#fix-tagvalue-message-syntax) for more details
+
+|
+| 35 | `MsgType` | String | Yes | The type of the message. See below for available types |
+| 49 | `SenderCompID` | String | Yes | A user defined client name |
+| 56 | `TargetCompID` | String | Yes | Constant value: `DERIBITSERVER` |
+| 34 | `MsgSeqNum` | SeqNum | Yes | A sequence number for the message, starts with 1, and must be incremented by 1 for every message |
+| 52 | `SendingTime` | UTCTimestamp | No | The time the request is sent. This field is ignored by the server |
+| 10 | `CheckSum` | String | Yes | The checksum of all of all preceding messages. In order to calculate checksum, sum up the binary value of each octet up to and including the end of field delimiter (Start of Heading) of the field immediately preceding the `CheckSum`(`10`).
+
+Afterwards calculate modulo 256 of that sum. The calculated modulo 256 checksum must then be encoded as an ISO 8859-1 three-octet representation of the decimal value.
+
+For example, if the message length sum of character values has been calculated to be 274 then the modulo 256 value is 18 (256 + 18 = 274). This value would be encoded in the CheckSum(10) field as “10=018”.
+
+CheckSum must always be the last field in the message.
+
+Please refer to [FIX specification](https://www.fixtrading.org/standards/tagvalue-online/#fix-tagvalue-message-syntax) Annex A for more details
+
+|
+
+Responses sent by the server will at least include:
+
+| Tag | Name | Type | Comments |
+|---|---|---|---|
+| 8 | `BeginString` | String | Identifies beginning of new message and protocol version. Must always be first in the message |
+| 9 | `BodyLength` | Length | Message length in bytes, not including fields `BeginString`(`8`), `BodyLength`(`9`) and `CheckSum`(`10`).
+
+Please refer to [FIX specification](https://www.fixtrading.org/standards/tagvalue-online/#fix-tagvalue-message-syntax) for more details
+
+|
+| 35 | `MsgType` | String | The type of the message. See below for available types |
+| 49 | `SenderCompID` | String | Constant value: `DERIBITSERVER` |
+| 56 | `TargetCompID` | String | A user defined client name |
+| 34 | `MsgSeqNum` | SeqNum | A server-chosen sequence number for the message |
+| 52 | `SendingTime` | UTCTimestamp | The time the request is sent. This field is ignored by the server |
+| 10 | `CheckSum` | String | The checksum of all of all preceding messages. Please refer to [FIX specification](https://www.fixtrading.org/standards/tagvalue-online/#fix-tagvalue-message-syntax) Annex A for more details|
+
+## `Logon`(`A`)
+
+`Logon`(`A`) must be the first message sent by the client to initiate a session. If
+authentication succeeds, the exchange should echo the message back to the
+client. If authentication fails, the exchange will respond with a
+[`LogOut`(`5`)](#logout-5) message with an appropriate reason.
+
+### Arguments
+
+| Tag | Name | Type | Required | Comments |
+|---|---|---|---|---|
+| 108 | `HeartBtInt` | int | Yes | Used to declare the timeout interval in seconds for generating heartbeats |
+| 95 | `RawDataLength` | Length | No | Number of bytes in raw data field. Not required, as the normal RawData is base64 text here |
+| 96 | `RawData` | data | Yes | The timestamp and a Base64 encoded _nonce_ (see below) |
+| 553 | `Username` | String | Yes | API Client ID. This can be obtained from the API tab on your account settings |
+| 554 | `Password` | String | Yes | See below |
+| 9002 | `UseWordsafeTags` | Boolean | No | If present and set to `Y`, all of the tag numbers for our custom tags start at 5000 instead of 100000. For example, `Volume24h`(`100087`) would become `5078`. This tag can be used due to the fact, that legacy software which implements FIX protocol, doesn't support the extended range for tags, which was defined in later protocol's revisions. This setting stays applied for the remainder of the connection |
+| 9001 | `CancelOnDisconnect` | Boolean | No | Boolean, to enable or disable session-level cancel on disconnect. Default - false(`N`) |
+| 9004 | `DeribitAppId` | String | No | Registered application Client ID. It is necessary for registered applications only |
+| 9005 | `DeribitAppSig` | String | No | Registered application Signature. It is necessary for registered applications only. It is calculated in a similar way to the Password(554) but with Application Secret instead of Client Secret: `base64(sha256(RawData ++ application_secret))`, see below |
+| 9007 | `DeribitSequential` | Boolean | No |Custom tag to adapt Deribit internal messaging to sequential FIX messaging. If the tag is present and set to `Y`, all messages, including order changes and notifications, are sent through a single queue. This eliminates the distinction between "request/response" and "notifications" queues, which typically handle messages separately. As a result, messages are sent in a sequential order without direct responses. This configuration may cause slower call-return information delivery compared to configurations that use two separate queues|
+| 9009 | `UnsubscribeExecutionReports`| Boolean | No | Custom tag. Default - false (`N`). If the tag is present and set to 'Y' this connection is unsubscribed from notificational Execution Reports about order changes. Only responses to order operation requests in this connection will be sent as Execution Reports, but no notifications such as orders from other connection or trades initiated by counterparty |
+| 9010 | `ConnectionOnlyExecutionReports`| Boolean | No | Custom tag. Default - false (`N`). If the tag is present and set to 'Y' this connection will receive notificational Execution Reports only for order created in this connection, it won't receive notification for orders created in other connections even within the same subaccount. This tag can be used to split Execution Reports between several connections to the same subaccount |
+| 9015 | `ReportFillsAsExecReports`| Boolean | No | Custom tag, default is false (N). If the tag is present and set to 'Y', then `FillsGrp` is not included into Execution Report, and reported as Execution Reports with `ExecType` = `F`(`TRADE`) |
+| 9018 | `DisplayIncrementSteps` | Boolean | No | **Custom tag**, default is false (`N`). If the tag is present and set to 'Y', then symbol entries will include the Price Increment steps of the Symbol (if applicable). See `NoTickRules`(`1205`) below
+
+The `RawData`(`96`) tag contains a timestamp and a _nonce_, separated by an
+ASCII period (`.`). The _timestamp_ needs to be a strictly increasing integer.
+We recommend using a timestamp in milliseconds. The _nonce_ is composed of
+base64-encoded randomly chosen bytes. For safety reasons, it is important that
+the _nonce_ is sufficiently long and sourced from a cryptographically secure
+random number generator. We recommend at least 32 bytes, but the _nonce_ can be
+up to 512 bytes.
+
+The `Password`(`554`) tag contains a base64 encoded SHA256 hash of the
+concatenation of the `RawData`(`96`) content and the cleint secret:
+`base64(sha256(RawData ++ access_secret))`, here `++` denotes operation of the
+concatenation.
+
+Optional custom tag `DeribitAppSig`(`9005`) contains a base64 encoded SHA256
+hash of the concatenation of the `RawData`(`96`) content and the Application
+secret: `base64(sha256(RawData ++ application_secret))`, here `++` denotes
+operation of the concatenation. This tag is used for registered applications
+only.
+
+`CancelOnDisconnect`(`9001`) controls "Close on Disconnect". If this tag is not
+provided, the default setting from the account is used.
+
+### Response
+
+When the login is successful, the server will echo back the request.
+
+If the login was not successful, the server will respond with a
+[`Logout`(`5`)](#logout-5) message, and close the connection.
+
+## `Logout`(`5`)
+
+`Logout`(`5`) can be sent by either party in order to terminate a session. The
+sending party should always wait for the echo of the logout request before they
+close the socket. Closing connections in any other way is considered abnormal
+behavior. Nonetheless, if `CancelOnDisconnect`(`9001`) was set at Logon, all
+orders will be cancelled at Logout.
+
+### Arguments
+
+| Tag | Name | Type | Required | Comments |
+|---|---|---|---|---|
+| 58 | `text` | String | No | Free format text string specifying the logout reason. This is ignored by the server |
+| 9003 | `DontCancelOnDisconnect` | Boolean | No | If `Y` then it disables `CancelOnDisconnect` for this connection even if `CancelOnDisconnect` was enabled in `Logon`(`A`) or account settings. Default - false(`N`), no changes for `CancelOnDisconnect` flag|
+
+## `Heartbeat`(`0`)
+
+When either end of a FIX connection has not sent or received any data for
+`HeartBtInt` seconds \(as specified in the [`Logon`(`A`)](#logon-a) message\), it
+will transmit a `Heartbeat`(`0`) message. When either end of a FIX connection
+has not received any data for `HeartBtInt` seconds, it will transmit a [`TestRequest`(`1`)](#test-request-1) message. If there is still no response, the
+session should be considered lost and corrective action should be initiated.
+
+### Arguments
+
+| Tag | Name | Type | Required | Comments |
+|---|---|---|---|---|
+| 112 | `TestReqId` | String | Varies | The identifier when responding to the [`Test Request`(`1`)](#test-request-1) message. When not responding to a `Test Request`(`1`) message, this tag can be left out |
+
+### Response
+
+When the heartbeat has been received successfully, the server will echo back the
+request as confirmation.
+
+## `Test Request`(`1`)
+
+The Test `Request`(`1`) message forces a heartbeat from the opposing
+application. The opposing application responds with a
+[`Heartbeat`(`0`)](#heartbeat-0) containing the `TestReqID`(`112`).
+
+### Arguments
+
+| Tag | Name | Type | Required | Comments |
+|-----|-------------|--------|----------|---------------------------------|
+| 112 | `TestReqId` | String | Yes | Mirrors the original request ID |
+
+## `Resend Request`(`2`)
+
+The `Resend Request`(`2`) message is used by the server to initiate the
+retransmission of messages. This function is utilized if a sequence number gap
+is detected, if the receiving application lost a message, or as a function of
+the initialization process.
+
+### Arguments
+
+| Tag | Name | Type | Required | Comments |
+|-----|--------------|------|----------|-----------------------------|
+| 7 | `BeginSeqNo` | int | Yes | The first message to repeat |
+| 16 | `EndSeqNo` | int | Yes | The last message to repeat |
+
+## `Reject`(`3`)
+
+The `Reject`(`3`) message should be issued when a message is received but cannot
+be properly processed due to a session-level or data structure rule violation.
+An example of when a reject may be appropriate would be the receipt of a message
+with invalid basic data \(e.g. missing tags\) which successfully passes
+decryption.
+
+### Arguments
+
+| Tag | Name | Type | Required | Comments |
+|---|---|---|---|---|
+| 45 | `RefSeqNum` | SeqNum | Yes | `MsgSeqNum`(`34`) of the rejected message |
+| 372 | `RefMsgType` | String | No | The `MsgType`(`35`) of the FIX message being referenced |
+| 373 | `SessionRejectReason` | int |No | Code to identity reason for rejection: - `6` = Incorrect data format for value
+- `11` = Invalid `MsgType`(`35`)
+- `99` = Other|
+| 58 | `Text` | String | No | Text string explaining the reason for rejection |
+
+## `Sequence Reset`(`4`)
+
+The `Sequence Reset`(`4`) is to recover from an out-of-sequence condition, to
+reestablish a FIX session after a sequence loss. The `MsgSeqNum`(`34`) in the
+header is ignored.
+
+### Arguments
+
+| Tag | Name | Type | Required | Comments |
+|-----|------------|--------|----------|---------------------|
+| 36 | `NewSeqNo` | SeqNum | Yes | New Sequence Number |
+
+### Response
+
+In reply to `Sequence Reset`(`4`), the exchange replies with `Resend
+Request`(`2`) with `BeginSeqNo`(`7`) and `EndSeqNo`(`16`) equal to the passed
+`NewSeqNo`(`36`) in case of success. In case of wrong arguments, the server
+replies with `Resend Request`(`2`) with `BeginSeqNo`(`7`) and `EndSeqNo`(`16`)
+equal to the current incoming sequence on the server.
+
+The `Sequence Reset` (`4`) can only increase the sequence number. If a `Sequence
+Reset`(`4`) is received attempting to decrease the next expected sequence number
+the reply is `Resend Request`(`2`) with `BeginSeqNo`(`7`) and `EndSeqNo`(`16`)
+equal to the current incoming sequence on the server.
+
+After sending the correct `Sequence Reset`(`4`), the client should start sending
+messages starting from the sequence number equal to the `NewSeqNo`(`36`) passed.
+
+## `Security List Request`(`x`)
+
+The `SecurityListRequest`(`x`) message is used to return a list of securities
+\(instruments\) from the Deribit.
+
+### Arguments
+
+| Tag | Name | Type | Required | Comments |
+|---|---|---|---|---|
+| 320 | `SecurityReqId` | String | Yes | A user-generated ID for this request. This can be used to match the request to the response |
+| 559 | `SecurityListRequestType` | int | Yes | 0 or 4 – in any case list of instruments is returned |
+| 263 | `SubscriptionRequestType` | int | No | Subscription Request Type to get notifications about new or terminated instruments. Valid values: - `0` = Snapshot,
+- `1` = Snapshot + Updates (Subscribe),
+- `2` = Disable previous Snapshot + Update Request (Unsubscribe)|
+| 9013 | `DisplayMulticastInstrumentID` | Boolean | No | **Custom tag**, default is false (`N`). If the tag is present and set to 'Y', then symbol entries will include the Multicast identifier of the Symbol (if applicable). See `NoSecurityAltID`(`454`) below |
+| 9018 | `DisplayIncrementSteps` | Boolean | No | **Custom tag**, default is false (`N`). If the tag is present and set to 'Y', then symbol entries will include the Price Increment steps of the Symbol (if applicable). See `NoTickRules`(`1205`) below |
+| 15 | `Currency` | String | No | First currency of the currency pair for limiting the resulted list. Required if `SecondaryCurrency`(`5544`) specified. |
+| 5544 | `SecondaryCurrency` | String | No | Second currency of the currency pair for limiting the resulted list. Default is USD if `Currency`(`15`) is specified. Current API doesn't support queries by `SecondaryCurrency` only, so `Currency` (`15`) is mandatory if `SecondaryCurrency` is present. In current implementation `SecondaryCurrency` is ignored in subscription when `SubscriptionRequestType` (`263`) = 1 |
+| 167 | `SecurityType` | String |No | Optional parameter for limiting output by the `SecurityType`. Describes type of security.
+
+Possible values: - `FXSPOT` for currency exchange spot
+- `FUT` for futures,
+- `OPT` for options,
+- `FUTCO` for future combo,
+- `OPTCO` for option combo
+- `INDEX` for indexes
+
+|
+
+### Response
+
+The server will respond with a [`Security List`(`y`)](#security-list-y) message,
+where the `SecurityReq`(`320`) is equal to that of the request.
+
+## `Security List`(`y`)
+
+The `SecurityList`(`y`) message is used to return a list of securities that
+matches the criteria specified in a [`Security List Request`(`x`)](#security-list-request-x).
+
+### Arguments
+
+| Tag | Name | Type | Required | Comments |
+|---|---|---|---|---|
+| 320 | `SecurityReqId` | String | Yes | The `SecurityReqId`(`320`) of the request that this is a response for |
+| 322 | `SecurityResponseID` | String | Yes | Identifier for the Security `List`(`x`) message |
+| 560 | `SecurityRequestResult` | int | Yes | `0` indicates a successful response. This is the only possible value in the Deribit FIX API |
+| | Group `SecListGrp` | | |
+| 146 | `NoRelatedSym` | NumInGroup | No | Specifies the number of repeating instruments specified |
+| =&gt;55 | `Symbol` | String | No | Common, "human understood" representation of the security, e.g., **BTC-28JUL17**, see instrument naming convention below for more details |
+| =&gt;107 | `SecurityDesc` | String |No | Free form security description: 'future', 'option', 'future_combo', 'option_combo' and various indexes |
+| =&gt;167 | `SecurityType` | String |No | Describes type of security.
+
+Possible values: - `FXSPOT` for currency exchange spot
+- `FUT` for futures,
+- `OPT` for options,
+- `FUTCO` for future combo,
+- `OPTCO` for option combo
+- `INDEX` for indexes
+
+|
+| =&gt;201 | `PutOrCall` | int | No | Indicates whether an Option is for a put or call. Only for Options.
+
+Possible values:- `0` = put,
+- `1` = call
+
+|
+| =&gt;202 | `StrikePrice` | Price | No | Strike price |
+| =&gt;947 | `StrikeCurrency` | String | No | Strike currency |
+| =&gt;15 | `Currency` | String | No | Currency |
+| =&gt;1524 | `PriceQuoteCurrency`| String | No | Quoting or counter currency |
+| =&gt;2576 | `InstrumentPricePrecision` | int | No | Number of decimal places for instrument prices \(usually 4 for options, 2 for futures\) |
+| =&gt;969 | `MinPriceIncrement` | float | No | Minimum price tick for a given Instrument |
+| =&gt;311 | `UnderlyingSymbol` | String | No | Underlying symbol for options |
+| =&gt;225 | `IssueDate` | UTCTimestamp | No | Date instrument was issued |
+| =&gt;541 | `MaturityDate` | UTCTimestamp | No | Expiration date, `YYYYMMDD` |
+| =&gt;1079 | `MaturityTime` | UTCTimestamp | No | Time of instruments expiration expressed in local time with offset to UTC specified |
+| =&gt;562 | `MinTradeVol` | Qty | No | The minimum trading volume for a security |
+| =&gt;63 | `SettlType` | String | No | Indicates order settlement period. E.g., `M1` – month, `W1` – week, `W2` – 2 weeks etc |
+| =&gt;120 | `SettlCurrency` | Currency | No | Currency code of settlement denomination |
+| =&gt;479 | `CommCurrency` | Currency | No | Specifies currency to be used for Commission |
+| =&gt;231 | `ContractMultiplier` | float | No | Specifies the ratio or multiply factor to convert from contracts to total units |
+| =&gt;454 | `NoSecurityAltID` | NumInGroup | No | Number of alternate security identifier.
+
+It is present only if [`Security List Request`(`x`)](#security-list-request-x) has `DisplayMulticastInstrumentID` = `Y`
+
+|
+| =&gt;=&gt;455 | `SecurityAltID` | String | No | The security identifier |
+| =&gt;=&gt;456 | `SecurityAltIDSource` | String | No | Identifies the class or source of the `SecurityAltID`(`455`) value. Required if SecurityAltID is specified.
+
+Possible values:- `101` = Multicast identifier
+- `102` = Combo instrument identifier
+- `1` = active/started,
+- `10` = published/created,
+- `4` = closed,
+- `2` = terminated/inactive,
+- `12` = settled
+
+|
+
+### Instrument Naming convention
+
+Based on the naming convention, instrument name consist of base currency, quote
+currency(called together a currency pair), contract expiration date (if the
+instrument isn't perpetual) and strike price(if the contract is an option).
+
+For example:
+
+**ETH_USD-14SEP22-2000-P** resembles an **ETH-USD** options contract that
+expires on 14 september 2022 with PUT strike price at 2000 USD. **BTC_USD**
+trading pair is treated as a default trading pair and doesn't have qoute currency
+provided in its name.
+
+(*) SecurityStatus is present only in notification messages for subscription by
+SecurityListRequest with SubscriptionRequestType=1. The notifications for
+closed, settled or terminated status contain only the status and symbol name.
+
+## `Market Data Request`(`V`)
+
+`Market Data Request`(`V`) can be used to request market data in snapshot or the
+incremental form. Deribit uses his message for order book requests and its
+change notification.
+
+### Arguments
+
+| Tag | Name | Type | Required | Comments |
+|---|---|---|---|---|
+| 262 | `MdReqId` | String |Yes | Unique ID assigned to this request |
+| 263 | `SubscriptionRequestType` | int |Yes |Subscription Request Type. Valid values: - `0` = Snapshot,
+- `1` = Snapshot + Updates (Subscribe),
+- `2` = Disable previous Snapshot + Update Request (Unsubscribe) |
+| 264 | `MarketDepth` | int | No | See remark about MDUpdateType below |
+| 265 | `MDUpdateType` | int | when `SubscriptionRequestType=1` | The type of update to subscribe to.
+
+Valid values:
+
+- `0`= full refresh,
+- `1`= incremental refresh
+- `0` = Bid \(Bid side of the order book\),
+- `1` = Offer \(Ask side of the order book\),
+- `2` = Trade \(Info about recent trades\),
+- `3` = Index Value \(value of Index for INDEX instruments like **BTC-DERIBIT-INDEX**\),
+- `6` = Settlement Price \(Estimated Delivery Price for INDEX instruments like **BTC-DERIBIT-INDEX**\) |
+| | Group `InstrmtMDReqGrp` | | | |
+| 146 | `NoRelatedSym` | NumInGroup | No | Number of symbols requested. Necessary if more than 1 Symbol requested |
+| =&gt;55 | `Symbol` | String | Yes | Instrument symbol. See instrument naming convention for more details |
+
+When requesting a subscription (`SubscriptionRequestType`=1), the only supported
+combinations are:
+
+- `MDUpdateType`=1, `MarketDepth`=0. This will result a [`Market Data - Snapshot`(`W`)](#market-data-snapshotfull-refresh-w) with the whole order book, followed by incremental updates (X messages) through the whole order book depth.
+- `MDUpdateType`=0, `MarketDepth`=(1,10,20). This results in [`Market Data - Full Refresh`(`W`)](#market-data-snapshotfull-refresh-w) messages, containing the entire specified order book depth. Valid values for `MarketDepth` are 1, 10, 20.
+
+If multiple instrument symbols are specified then the system responds with
+multiple market data messages corresponding to those instruments.
+
+### Response
+
+If the server is unable to supply the requested data, it will respond with a
+[`Market Data Request Reject`(`Y`)](#market-data-request-reject-y) message.
+
+If the request called for a snapshot (`SubscriptionRequestType`(`263`)=0), the
+server will respond with a [`Market Data - Snapshot/Full Refresh`(`W`)](#market-data-snapshotfull-refresh-w) message.
+
+If the request called for a snapshot and subscription
+(`SubscriptionRequestType`(`263`)=1), the server will start sending [`Market
+Data - Incremental Refresh`(`X`)](#market-data-incremental-refresh-x) messages.
+
+## `Market Data Request Reject`(`Y`)
+
+If a [`Market Data Request`(`V`)](#market-data-request-v) message is not
+accepted, the exchange responds with a `Market Data Request Reject`(`Y`) message
+
+### Arguments
+
+| Tag | Name | Type | Required | Comments |
+|---|---|---|---|---|
+| 58 | `Text` | String | No | Free format text string |
+| 262 | `MDReqID` | String | Yes | ID of the original request |
+| 281 | `MDReqRejReason` | char | Yes | Reason for the rejection of a `Market Data Request`(`V`).
+
+Possible reasons: - `0` = Unknown symbol
+- `1` = Duplicate MDReqID(`262`)
+- `2` = Insufficient Bandwidth
+- `3` = Insufficient Permissions
+- `
+- `5` = Unsupported MarketDepth(`264`)
+- `6` =
+- `7` = Unsupported AggregatedBook (`266`)
+- `8` = Unsup
+- `9` = Unsupported TradingSessionID(`336`)
+- `A` = Unsupporte
+- `B` = Unsupported OpenCloseSettlFlag(`286`)
+- `C` = Unsupported MDI
+- `D` = Insufficient credit
+- `0` = put,
+- `1` = call
+
+|
+| 100087 | `TradeVolume24h` | Qty | No | Defines 24h trade volume for the Symbol in the corresponding contract units |
+| 100090 | `MarkPrice` | Price | No | Defines mark price for the Symbol |
+| 746 | `OpenInterest` | float | No | Defines open interest for the Symbol |
+| 100092 | `CurrentFunding` | Price | No |Current funding (perpetual only) |
+| 100093 | `Funding8h` | Price | No | Funding in last 8h (perpetual only) |
+| | Group `MDFullGrp` | | |
+| 268 | `NoMDEntries` | NumInGroup | Yes | Repeating group. Specifies the number of entries in the group |
+| =&gt;269 | `MDEntryType` | int | Yes |Possible values:- `0` = Bid (Bid side of the order book),
+- `1` = Offer (Ask side of the order book),
+- `2` = Trade (in case of request for info about recent trades),
+- `3` = Index Value (value of Index for INDEX instruments like **BTC-DERIBIT-INDEX**),
+- `
+- `1` = Buy,
+- `2` = Sell
+- `0` = New,
+- `1` = Partially filled,
+- `2` = Filled,
+- `4` = Cancelled |
+| =&gt;100010 | `DeribitLabel` | String | No | User defined max 64 grapheme clusters long, label of the order, in case of the request for trades. **This tag operates on grapheme clusters. A grapheme cluster is a user-perceived character, which can be represented by several unicode codepoints. Please refer to [Unicode specification](https://unicode.org/reports/tr29/) for more details about the grapheme clusters** |
+| =&gt;100091 | `DeribitLiquidation` | String | No | Optional field (only for trades caused by liquidation): "M" when maker side of trade was under liquidation, "T" when taker side was under liquidation, "MT" when both sides of trade were under liquidation. This field is hidden for public for the first hour after the trade in order to prevent traders from abusing this information.|
+| =&gt;880 | `TrdMatchID` | String | No | Only for trades. Block trade id - when trade was part of block trade. It can be included only if `DeribitShowBlockTradeId`(`9012`) is set to `Y` and `DeribitSkipBlockTrades`(`9011`) is set to `N` |
+
+CurrentFunding and Funding8h are present only in `W` message, not in `X` message
+below.
+
+## `Market Data Incremental Refresh`(`X`)
+
+`Market Data – Incremental Refresh`(`X`) message is used for incremental updates
+in case of [`Market Data Request`(`V`)](#market-data-request-v) for Snapshot +
+Subscribe
+
+### Arguments
+
+| Tag | Name | Type | Required | Comments |
+|---|---|---|---|---|
+| 55 | `Symbol` | String | Yes | Instrument symbol. See instrument naming convention for more details |
+| 262 | `MDReqID` | String | No | ID of the original request, if it is applicable |
+| 231 | `ContractMultiplier` | float| No | Specifies a multiply factor to convert from contracts to total units |
+| 201 | `PutOrCall` | int | No | Indicates whether an Option is for a put or call. Only for Options.
+
+Possible values:- `0` = put,
+- `1` = call
+
+|
+| 100087 | `TradeVolume24h` | Qty | No | Defines 24h trade volume for the Symbol in the corresponding contract units |
+| 100090 | `MarkPrice` | Price | No | Defines mark price for the Symbol |
+| 746 | `OpenInterest` | float | No | Defines open interest for the Symbol |
+| | Group `MDIncGrp` | | |
+| 268 | `NoMDEntries` | NumInGroup | Yes | Repeating group . Specifies the number of entries in the group |
+| =&gt;279 | `MDUpdateAction` | char | Yes | Type of Market Data update action. Valid values: - `0` = New,
+- `1` = Change,
+- `2` = Delete |
+| =&gt;269 | `MDEntryType` | int | No | Possible values:- `0` = Bid (Bid side of the order book),
+- `1` = Offer (Ask side of the order book),
+- `2` = Trade (In case of request for info about recent trades),
+- `3` = Index Value (value of Index for INDEX instruments like **BTC-DERIBIT-INDEX**),
+- `6` = Settlement Price (Estimated Delivery Price for INDEX instruments like **BTC-DERIBIT-INDEX**)|
+| =&gt;270 | `MDEntryPx` | Price | No | Price of an entry |
+| =&gt;271 | `MDEntrySize` | Qty | No | Size of an entry in Contract units corresponding to the ContractMultiplier in SecurityList|
+| =&gt;272 | `MDEntryDate` | UTCTimestamp | No | The timestamp for trade |
+| =&gt;100009 | `DeribitTradeId` | String | No | Id of the trade, in case of the request for trades |
+| =&gt;54 | `Side` | char | No | Side of trade.
+
+Possible values:
+
+- `1` = Buy,
+- `2` = Sell |
+| =&gt;37 | `OrderId` | String | No | For trade – order id |
+| =&gt;198 | `SecondaryOrderId` | String | No | For trade – matching order id |
+| =&gt;39 | `OrdStatus` | char | No | For trade – order status.
+
+Possible values:
+
+- `0` = New,
+- `1` = Partially filled,
+- `2` = Filled,
+- `4` = Cancelled |
+| =&gt;100010 | `DeribitLabel` | String | No | User defined max 64 grapheme clusters long, label of the order, in case of the request for trades. **This tag operates on grapheme clusters. A grapheme cluster is a user-perceived character, which can be represented by several unicode codepoints. Please refer to [Unicode specification](https://unicode.org/reports/tr29/) for more details about the grapheme clusters** |
+| =&gt;44 | `Price` | Price | No | For trades, this is the index price at the trade moment \(Deribit index\) |
+| =&gt;58 | `Text` | String | No | The trade sequence number |
+| =&gt;100091 | `DeribitLiquidation` | String | No | Optional field (only for trades caused by liquidation): "M" when maker side of trade was under liquidation, "T" when taker side was under liquidation, "MT" when both sides of trade were under liquidation. This field is hidden for public for the first hour after the trade in order to prevent traders from abusing this information.|
+| =&gt;880 | `TrdMatchID` | String | No | Only for trades. Block trade id - when trade was part of block trade. It can be included only if `DeribitShowBlockTradeId`(`9012`) is set to `Y` and `DeribitSkipBlockTrades`(`9011`) is set to `N` |
+
+## `New Order Single`(`D`)
+
+The `NEW ORDER SINGLE`(`D`) is used by the client to submit new orders to the
+exchange.
+
+### Arguments
+
+| Tag | Name | Type | Required | Comments |
+|---|---|---|---|---|
+| 11 | `ClOrdID` | String | Yes | Unique identifier for the order, assigned by the client, max 64 grapheme clusters. **This tag operates on grapheme clusters. A grapheme cluster is a user-perceived character, which can be represented by several unicode codepoints. Please refer to [Unicode specification](https://unicode.org/reports/tr29/) for more details about the grapheme clusters** |
+| 54 | `Side` | char | Yes | Side of order.
+
+Valid values:
+
+- `1` = Buy,
+- `2` = Sell |
+| 38 | `OrderQty` | Qty | Yes | Order quantity. Depends on `QtyType`. When `QtyType` is set to `Units`, the `OrderQty` is specified in USD for perpetual and inverse futures, in the underlying base currency coin for linear futures, or in the amount of cryptocurrency contracts for options. The system will automatically convert `Units` to `Contracts` when the order is placed **Please, note that Quantity is by default defined in Contract units corresponding to the ContractMultiplier in SecurityList** |
+| 44 | `Price` | Price | Yes | Price |
+| 55 | `Symbol` | String | Yes | Instrument symbol, e.g., **BTC-1JAN16**. See instrument naming convention for more details |
+| 62 | `ValidUntilTime` | UTCTimestamp | No | Indicates expiration time of indication message, in UTC |
+| 18 | `ExecInst` | MultipleCharValue | No | Currently is used to mark POST ONLY orders and REDUCE ONLY orders.
+
+POST ONLY valid values:
+
+- `6` = "Participate don't initiate",
+- `A` = "No cross" (only together with 6, "`6A`" -- REJECT POST ONLY when the order is put to order the book unmodified or the request is rejected and order is cancelled), REDUCE ONLY valid values: - `E` = "Do not increase - DNI" |
+| 40 | `OrdType` | Char | No | Order type.
+
+Valid values:- `1` = Market,
+- `2` = Limit \(by default\),
+- `K` = Market With Left Over as Limit \(market limit\),
+- `4` = Stop limit \(trailing stop\),
+- `J` = Market If Touched \(stop limit, if `StopPx`(99) is set\),
+- `S` = Stop Limit on Bid or Offer \(stop market, if `StopPx`(99) is set\)
+
+|
+| 59 | `TimeInForce` | char | No | Specifies how long the order remains in effect. Absence of this field is interpreted as "Good 'Til Cancelled".
+
+Valid values:- `0` = Good 'Til Day(`GTD`),
+- `1` = Good 'Til Cancelled(`GTC`),
+- `3` = Immediate or Cancel(`IOC`),
+- `4` = Fill or Kill(`FOK`)
+
+|
+| 99 | `StopPx` | Price | No | Price per unit of quantity |
+| 1138 | `DisplayQty` | Qty | No | The (max) quantity to be displayed in the orderbook. Setting the `DisplayQty (1138)` = 0 is interpreted as no hidden volume, i.e. the full order quantity is displayed to the market. Omitting the field gives the same result. |
+| 1088 | `RefreshQty` | Qty | No | Defines the quantity used to refresh `DisplayQty`. |
+| 854 | `QtyType` | Int | No | Type of quantity. Valid values:
+
+- `0` = `Units`,
+- `1` = `Contracts`
+
+Default is `Contracts`.
+
+When `QtyType` is `Units`, then for perpetual and inverse futures the `OrderQty` is in USD units, and for linear futures it is the underlying base currency coin, and for options it is the amount of corresponding cryptocurrency contracts, e.g., BTC or ETH. The `Units` will be recalculated into the system's `Contracts` on server automatically when the order is placed.
+
+|
+| 211 | `PegOffsetValue` | Float | No | Amount (signed) added to the peg for a pegged order in the context of the `PegOffsetType`(836) |
+| 1094 | `PegPriceType` | Int | No | Needs to be set for Trailing Stop order. Valid value:
+
+- `8` = Trailing Stop Peg
+
+|
+| 100010 | `DeribitLabel` | String | No | A custom label for your order, max 64 grapheme clusters. Can be used by [`Order Cancel Request`(`F`)](#order-cancel-request-f) to amend the order later on|
+| 100012 | `DeribitAdvOrderType` | char | No | Used to create advanced order for options. If it is present: - `0` = Implied Volatility Order (price defines fixed implied volatility in %),
+- `1` = USD Order (price defines fixed USD price of the option, advanced USD orders are not supported for linear options) |
+| 9008 | `DeribitMMProtection`| Boolean | No | Order Market Maker Protection (MMP) flag, default is `N`. **Important: manual admin action is necessary to activate Market Maker Protection (MMP) for an account** |
+| 5127 | `DeribitConditionTriggerMethod` | Int | No | Selects condition trigger method for algo orders. Valid values:
+
+- `1` = mark price,
+- `2` = trade,
+- `3` = index
+
+|
+
+### Response
+
+Upon receiving a new order, the exchange responds with the `Execution
+Report`(`8`) message communicating whether the order was accepted or rejected.
+
+| Tag | Name | Type | Required | Comments |
+|---|---|---|---|---|
+| 527 | `SecondaryExecID`| String| No | ID of the last order change |
+| 37| `OrderId` | String | No | Unique identifier of the order, assigned by the Deribit|
+| 11 | `ClOrdID` | String | No | Deribit replaces this field with the own value assigned by the server \(it is not the `ClOrdID`(`11`) from [`New Order Single`(`D`)](#new-order-single-d)) |
+| 41 | `OrigClOrdId` | String | No | The original value assigned by the client in the [`New Order Single`(`D`)](#new-order-single-d) message |
+| 39 | `OrdStatus` | char | Yes |For trade – order status.
+
+Possible values:
+
+- `0` = New,
+- `1` = Partially filled,
+- `2` = Filled,
+- `4` = Cancelled
+- `8` = Rejected |
+| 54 | `Side` | char | Yes | Side of order.
+
+Possible values:
+
+- `1` = Buy,
+- `2` = Sell |
+| 60 | `TransactTime` | UTCTimestamp | Yes | Timestamp when the transaction represented by this `Execution Report`(`8`) message occurred. Fix timestamp |
+| 12 | `Commission` | float | No | Deprecated. Always `0` |
+| 151 | `LeavesQty` | Qty | Yes | Order quantity open for further execution \(`LeavesQty` = `OrderQty` - `CumQty`\) in Contract units corresponding to the ContractMultiplier in SecurityList|
+| 14 | `CumQty` | Qty | Yes | Total executed quantity or 0.0 in Contract units corresponding to the ContractMultiplier in SecurityList|
+| 38 | `OrderQty` | Qty | Yes | Order quantity in Contract units corresponding to the ContractMultiplier in SecurityList|
+| 40 | `OrdType` | Char | No | Order type.
+
+Valid values:- `1` = Market,
+- `2` = Limit,
+- `K` = Market With Left Over as Limit \(market limit\),
+- `4` = Stop limit \(trailing stop\),
+- `J` = Market If Touched \(stop limit, if `StopPx`(99) is set\),
+- `S` = Stop Limit on Bid or Offer \(stop market, if `StopPx`(99) is set\)
+
+|
+| 44 | `Price` | Price | Yes | Price |
+| 150| `ExecType` | char | No | Describes the specific Execution Report.
+
+Possible values: - `I` = equal to (Order Status),
+- `7` = (Stopped) for triggered stop orders,
+- `8` = Rejected,
+- `3` = (Done for day) for GTD orders,
+- `C` = (Expired) for the orders expired at delivery
+
+|
+| 18 | `ExecInst` | MultipleValueString | No | Currently is used to mark POST ONLY orders and REDUCE ONLY orders.
+
+POST ONLY Possible values:
+
+- `6` = "Participate don't initiate",
+- `A` = "No cross" (only together with 6, "`6A`" -- REJECT POST ONLY when the order is put to the order book unmodified or the request is rejected and order is cancelled), REDUCE ONLY possible values: - `E` = " Do not increase - DNI" |
+| 103 | `OrdRejReason` | int | Yes | Possible reasons: - `0` = no reject (the request has been accepted)
+- `1` = Unknown symbol
+- `2` = Exchange closed
+- `3` = Order exceeds limit
+- `
+- `5` = Unknown order
+- `6` =
+- `7` = Duplicate of a verbally communicated order
+- `8` = Stale
+- `9` = Trade along required
+- `10` = Invalid I
+- `11` = Unsupported order characteristic
+- `12` = Surveillance O
+- `13` = Incorrect quantity- `14` = Incorrect allocated quantity
+- `15` = Unknown account(s)
+- `16` = Price exceeds current price band
+- `18` = Invalid price increment
+
+**Note: Values 3, 4, and 5 will be used when rejecting an order due to pre-allocation information errors.** |
+| 58 | `Text` | String | No | Free format text string, usually exceptions |
+| 207 | `SecurityExchange` | String | No | "Deribit" |
+| 55 | `Symbol` | String | Yes | Instrument symbol |
+| 99 | `StopPx` | Price | No | Price per unit of quantity |
+| 854 | `QtyType` | int | No | Type of quantity specified in a quantity. Currently only 1 - `Contracts` |
+| 211 | `PegOffsetValue` | Float | No | Amount (signed) added to the peg for a pegged order in the context of the `PegOffsetType`(836) |
+| 1094 | `PegPriceType` | Int | No | Needs to be set for Trailing Stop order. Valid value:
+
+- `8` = Trailing Stop Peg
+
+|
+| 231 | `ContractMultiplier` | float | No | Specifies a multiply factor to convert from contracts to total units |
+| 6 | `AvgPx` | float | No | Average execution price or 0.0 if not executed yet or rejected |
+| 1138 | `DisplayQty` | Qty | No | The (max) quantity to be displayed in the orderbook. |
+|9008| `DeribitMMProtection`| Boolean | No | Order Market Maker Protection (MMP) flag. **Important: manual admin action is necessary to activate Market Maker Protection (MMP) for an account** |
+| 100012 | `DeribitAdvOrderType` | int | No | If it is present then it denotes advanced order for options.
+
+Possible values:- `0` = Implied Volatility Order (price defines fixed implied volatility in %),
+- `1` = USD Order (price defines fixed USD price of the option, advanced USD orders are not supported for linear options)
+
+|
+| 1188 | `Volatility` | float | No | Volatility for Implied Volatility Orders (options orders with fixed volatility) |
+| 839 | `PeggedPrice` | Price | No | Value of fixed USD price for USD Orders (options orders with fixed USD price) |
+| 31 | `LastPx` | Price | No | Price of this last fill |
+| 32 | `LastQty` | Qty | No | Quantity bought/sold on this last fill
+| 100010 | `DeribitLabel` | String | No | A custom label for your order, max 64 grapheme clusters. Can be used by [`Order Cancel Request`(`F`)](#order-cancel-request-f) to amend the order later on|
+| 9019	| `MMPGroup` | String | No | A custom tag of MMP Group. This tag is present only for orders from Mass Quote. |
+| 9034	| `IsLiquidation` | Boolean | No | A custom tag, `9034=Y` if the order was automatically created during liquidation. |
+| 9035	| `IsRebalance` | Boolean | No | A custom tag, `9035=Y` if the order was automatically created during cross-collateral balance restoration. |
+| 9036	| `IsRiskReducing` | Boolean | No | A custom tag, `9036=Y` if the order is marked by the platform as a risk reducing order (can apply only to orders placed by PM users). |
+| 302	| QuoteSetID | String | No | identifier for the Quote Set. This tag is present only for orders from Mass Quote. |
+| 117	| QuoteID	 | String | No | identifier for the Quote. This tag is present only for orders from Mass Quote. |
+| 299	| QuoteEntryID	 | String | No | identifier for the Quote Entry. This tag is present only for orders from Mass Quote. |
+| | Group `FillsGrp` | | |
+| 1362 | `NoFills` | NumInGroup | No | Number of fill entries for the order |
+| =&gt;1363 | `FillExecID` | String | No | Unique identifier of execution, concatenated via '\#' symbol and trade sequence number, e.g., **BTC-28SEP18#38** |
+| =&gt;1364 | `FillPx` | Price | No | Price of this partial fill |
+| =&gt;1365 | `FillQty` | Qty | No | Quantity bought/sold on this partial fill |
+| =&gt;1443 | `FillLiquidityInd` | int | No | Indicator to identify whether this fill was a result of a liquidity provider providing or liquidity taker taking the liquidity.
+
+Possible values:- `1` = Added Liquidity,
+- `2` = Removed Liquidity
+
+|
+
+## `Order Cancel Request`(`F`)
+
+This message requests the cancellation of a particular order. If an order has
+been partially filled, only the remaining quantity can be cancelled. The request
+should be accepted only if an order can successfully be cancelled without
+executing further. The server generated identifiers should be used as
+`OrigClOrdId`.
+
+From Release 1.3.10, it is possible to cancel orders by `ClOrdID` or
+`DeribitLabel`, and `OrigClOrdId` is not required anymore, however canceling
+orders by `OrigClOrdId` is noticeably faster.
+
+#### IMPORTANT:
+
+- to cancel an order by `ClOrdID` or `DeribitLabel`, this must be the only open order (with such `ClOrdID` or `DeribitLabel` respectively). To cancel many orders by `DeribitLabel`, use [`Order MassCancel Request`(`q`)](#order-mass-cancel-request-q).
+- when possible it is recommended to use faster `OrigClOrdId`
+
+### Arguments
+
+| Tag | Name | Type | Required | Comments |
+|---|---|---|---|---|
+| 11 | `ClOrdID` | String | Required if `OrigClOrdId`, `DeribitLabel` are absent | Original order identifier assigned by the user. There must be the only open order with such `ClOrdID` |
+| 41 | `OrigClOrdId` | String | Required if `DeribitLabel`, `ClOrdID` are absent | Order identifier assigned by Deribit over the user one|
+| 100010 | `DeribitLabel` | String | Required if `OrigClOrdId`, `ClOrdID` are absent |A custom label for your order, max 64 grapheme clusters. There must be the only open order with this `DeribitLabel` otherwise use [`Order MassCancel Request`(`q`)](#order-mass-cancel-request-q). **This tag operates on grapheme clusters. A grapheme cluster is a user-perceived character, which can be represented by several unicode codepoints. Please refer to [Unicode specification](https://unicode.org/reports/tr29/) for more details about the grapheme clusters**|
+| 55 | `Symbol` | String | Required if `OrigClOrdId` is absent | Instrument symbol, e.g., **BTC-1JAN16**|
+| 15 | `Currency` | String | No | To speed up the search of the order by `DeribitLabel` or `ClOrdID`|
+
+### Response on failure
+
+## `Order Cancel Reject`(`9`)
+
+`Order Cancel Reject`(`9`) is issued by the exchange upon receipt of
+[`Order Cancel Request`(`F`)](#order-cancel-request-f) message which cannot be executed.
+
+Alongside tags listed below, `Order Cancel Reject`(`9`) also sends corresponding tag (`ClOrdID`, `OrigClOrdId` or `DeribitLabel`), used by the user to cancel the order in [`Order Cancel Request`(`F`)](#order-cancel-request-f) or [`Order Cancel/Replace Request`(`G`)](#order-cancel-replace-request-g).
+
+| Tag | Name | Type | Required | Comments |
+|---|---|---|---|---|
+| 52 | `SendingTime` | UTCTimestamp | Yes | Time of message transmission expressed in UTC |
+| 39 | `OrdStatus` | char | No | Order status. Present only if applicable.
+
+Possible values:
+
+- `0` = New,
+- `1` = Partially filled,
+- `4` = Cancelled,
+- `6` = Pending cancel,
+- `8` = Rejected |
+| 58 | `Text` | String | No | Text string explaining the reason for rejection |
+| 41 | `OrigClOrdId` | String | No | Original order identifier assigned by the user |
+| 11 | `ClOrdID` | String | No | Order identifier assigned by Deribit |
+| 100010 | `DeribitLabel` | String | No |A custom label for your order|
+
+### Response on success
+
+The following `Execution Report`(`8`) is sent by the exchange upon successfully
+processing a cancel request.
+
+| Tag | Name | Type | Required | Comments |
+|---|---|---|---|---|
+| 52 | `SendingTime` | UTCTimestamp | Yes | Time of message transmission expressed in UTC |
+| 11 | `ClOrdID` | String | No | Deribit replaces this field with the own value assigned by the server (it is not the client id from [`New Order Single`(`D`)](#new-order-single-d)) |
+| 41 | `OrigClOrdId` | String | No | The original value assigned by the client in the [`New Order Single`(`D`)](#new-order-single-d) message |
+| 150 | `ExecType` | char | No | Describes the specific Execution Report.
+
+Possible values:
+
+- `4` = Cancelled,
+- `6` = Pending Cancel|
+| 39 | `OrdStatus` | char | Yes | For trade – order status.
+
+Possible values:
+
+- `0` = New,
+- `1` = Partially filled,
+- `4` = Cancelled,
+- `6` = Pending cancel,
+- `8` = Rejected |
+| 58 | `Text` | String | Yes | Text string describing the result |
+
+This brief Execution Report comes faster and just indicates that the order was
+cancelled. Besides this brief report, the server always sends the last state of the
+cancelled order as another Execution Report with Text="notification" and all
+details about the cancelled order.
+
+**MMP orders:** if the Market Maker
+Protection (MMP) order was cancelled by user request the `DeribitMMProtection
+(9008)` flag is removed from the notification Execution Report. Presence of the
+`DeribitMMProtection (9008)` flag in the Execution Report with status "cancelled"
+means that the order has been cancelled by Market Maker Protection (MMP).
+
+## `Order Mass Cancel Request`(`q`)
+
+`Order Mass Cancel Request`(`q`) message will trigger cancellation of a group of
+orders.
+
+From Release 1.3.10, it is possible to cancel orders by DeribitLabel, and the
+option `10` of the `MassCancelRequestType`(`530`) has been added.
+
+### Arguments
+
+| Tag | Name | Type | Required | Comments |
+|---|---|---|---|---|
+| 11 | `ClOrdID` | String | Yes | Unique ID of `Order Mass Cancel Request`(`q`) as assigned by the client, max 64 grapheme clusters. **This tag operates on grapheme clusters. A grapheme cluster is a user-perceived character, which can be represented by several unicode codepoints. Please refer to [Unicode specification](https://unicode.org/reports/tr29/) for more details about the grapheme clusters** |
+| 530 | `MassCancelRequestType` | int| Yes | Specifies the type of cancellation requested.
+
+Valid values:- `7` = all orders,
+- `5` = orders by security type,
+- `1` = orders by symbol,
+- `10` = orders by DeribitLabel
+
+|
+| 100010 | `DeribitLabel` | String | if `MassCancelRequestType`(`530`)=10 | A custom label for your order, max 64 grapheme clusters. Can be used by [`Order Cancel Request`(`F`)](#order-cancel-request-f) to amend the order later on. Equivalent of REST/WS `cancel_by_label`|
+| 167 | `SecurityType` | String | If `MassCancelRequestType`(`530`)=5 | Describes type of security.
+
+Possible values: - `FUT` for futures,
+- `OPT` for options,
+- `FUTCO` for future combo,
+- `OPTCO` for option combo
+
+|
+| 55 | `Symbol` | String | If `MassCancelRequestType`(`530`)=1 | The symbols for which to cancel all orders |
+| 15 | `Currency` | String | No | To cancel only certain currency if it is applicable. See [`Security List Request`(`x`)](#security-list-request-x)|
+| 9031 | `FreezeQuotes` | Boolean | No | Whether or not to reject incoming quotes for 1 second after cancelling |
+
+### Response
+
+After the cancellation, the server responds with
+an `Order Mass Cancel Report`(`r`).
+
+## `Order Mass Cancel Report`(`r`)
+
+| Tag | Name | Type | Required | Comments |
+|---|---|---|---|---|
+| 11 | `ClOrdID` | String | No | Unique Identifier assigned by the client in the [`Order Mass Cancel Request`(`q`)](#order-mass-cancel-request-q) |
+| 37 | `OrderID` | String |	No | Unique ID assigned by Deribit for this order |
+| 530 | `MassCancelRequestType` | int | Yes | Specifies the type of cancellation request.
+
+Possible values:- `7` = all orders,
+- `5` = orders by security type,
+- `1` = orders by symbol,
+- `10` = orders by DeribitLabel
+- `11` = quote cancel -- response to ` Quote Cancel` (`Z`) request used in mass quoting
+
+|
+| 531 | `MassCancelResponse` | int | No | If successful, echoes the `MassCancelRequestType`(`530`) |
+| 298 | `QuoteCancelType` | int | No |	May be present in case of reply to `Quote Cancel` (`Z`) request. 1 = Cancel for `Symbol`(`55`), 2 = Cancel for `SecurityType` (`167`), 4 = Cancel All Quotes, 5 = for `Currency` (`5`), 6 = for `QuoteSetID` (`302`), 7 = for Delta range |
+| 58 | `Text` | String | No | 'success', if deletion was successful |
+| 532 | `MassCancelRejectReason` | String | No | Reason why deletion failed.
+
+Possible values:- `1` = Unknown security,
+- `5` = Unknown security type
+
+|
+| 533 | `TotalAffectedOrders` | int | No | Total number of orders affected by [`Order Mass Cancel Request`(`q`)](#order-mass-cancel-request-q)|
+| | Group `AffectedOrdGrp` | | |
+| 534 |	`NoAffectedOrders` | int | No | Optional field used to indicate the number of order identifiers for orders affected by the [`Order Mass Cancel Request`(`q`)](#order-mass-cancel-request-q)|
+| =&gt;41| `OrigClOrdID` | String |	No | Required if `NoAffectedOrders`(`534`) > 0. Indicates the client order id of an order affected by the [`Order Mass Cancel Request`(`q`)](#order-mass-cancel-request-q)|
+
+## `Order Mass Status Request`(`AF`)
+
+`Order Mass Status Request`(`AF`) message requests the status of currently open
+orders. The exchange should respond with a series of `Execution Reports`(`8`)
+messages detailing orders.
+
+### Arguments
+
+| Tag | Name | Type | Required | Comments |
+|------|-------------------------|--------|----------|-----------------------------------------------------------------------------|
+| 584 | `MassStatusReqID` | String | Yes | Client-assigned unique ID of this request |
+| 585 | `MassStatusReqType` | String | Yes | Specifies the scope of the mass status request. (see below) |
+| 9014 | `MassStatusReqIDType` | int | No | For MassStatusReqType=7, it defines which ID or label represents the MassStatusReqID: 0 = OrigClOrdID, 1 = ClOrdId, 2 = DeribitLabel. Default is 0 |
+| 11 | `Currency` | String | Required if `MassStatusReqIDType` is 1 or 2 and `Symbol` is missing | To search the order by DeribitLabel or ClOrdID |
+| 55 | `Symbol` | String | Required if `MassStatusReqIDType` is 1 or 2 and `Currency` is missing | If Currency is not specified, to search the order by DeribitLabel or ClOrdID|
+{/* | 9039 | `OrderHistoryIncludeUnfilled` | Boolean | No | If `MassStatusReqType` is 10 (History) and this tag is `Y` then the request searches also for cancelled pure unfilled orders in the order history. Worth noting, cancelled unfilled orders stay in history for limited time. Without this tags cancelled unfilled orders will be skip in the response.|
+| 9040 | `OrderHistoryOffset` | Integer | No | The offset for pagination, default - 0. This tag may be used only for `MassStatusReqType`=10.|
+| 911 | `TotNumReports` | int | No | For historical request (`MassStatusReqType`=10), it defines the number of requested items, default - 100. Maximum value is 1000. | */}
+
+This message can be used in two ways: to request status of all your open orders,
+or to request the status of a single order(This also applies to closed orders).
+
+{/* This message can be used in following ways:
+
+* to request status of all your open orders,
+* to request the status of a single order(This also applies to closed orders).
+* to request historical orders which were partially or fully filled (unfilled cancelled orders are present in history but only for a limited time period) */}
+
+To request the status of all orders, choose a random `MassStatusRequestId`, and
+set `MassStatusReqType=7`. The server will respond with a series of `Execution Reports`(`8`) messages, where the first message contains `MassStatusReqType=7`
+
+{/* *To request the status of all orders*: choose a random `MassStatusRequestId`, and
+set `MassStatusReqType=7`. The server will respond with a series of `Execution Reports`(`8`) messages, where the first message contains `MassStatusReqType=7`
+and `TotNumReports` will be set to the number of reports to be expected as a
+follow-up. */}
+
+*To request the status of a specific order*: set `MassStatusReqType=1`, and set
+`MassStatusReqId` to the order ID. Please keep in mind this message also applies
+to closed orders.
+
+It is allowed to request status for an order (or several orders) by `ClOrdID` or `DeribitLabel` for example when connection is broken and server-side generated ID-s are not received. In that case set `MassStatusReqType=7` and set `MassStatusReqIDType=1` for the search by `ClOrdID` or use `MassStatusReqIDType=2` for the search by `DeribitLabel`. In both cases `Currency` or `Symbol` are required for such a search.
+
+{/* *To request historical orders*: set `MassStatusReqType=10` and specify `Currency` or `Symbol` for the request. To include fully unfilled orders in the response, set custom tag `OrderHistoryIncludeUnfilled` (`9037`) to `Y`. The default maximum number of reports is 100, use `TotNumReports` in the request for the different number if required (maximum 1000 reports is allowed, and `OrderHistoryOffset` (`9039`) custom tag can be used for the pagination). The server will respond with a series of `Execution Reports`(`8`) messages, where the first message contains `MassStatusReqType=7`
+and `TotNumReports` will be set to the number of reports to be expected as a
+follow-up. Open unfilled orders are not included in the historical data. */}
+
+### Response
+
+When the client requests the status of current orders, the exchange should reply
+with a series of special `Execution Reports`(`8`), one for every order
+requested.
+
+| Tag | Name | Type | Required | Comments |
+|---|---|---|---|---|
+| 37| `OrderId` | String | No | Unique identifier for Order as assigned by the Deribit|
+| 11 | `ClOrdID` | String | No | Deribit replaces this field with the own value assigned by the server (it is not the client id from [`New Order Single`(`D`)](#new-order-single-d)) |
+| 41 | `OrigClOrdId` | String | No | The original value assigned by the client in the [`New Order Single`(`D`)](#new-order-single-d) message |
+| 39 | `OrdStatus` | char | Yes |For trade – order status.
+
+Possible values:
+
+- `0` = New,
+- `1` = Partially filled,
+- `2` = Filled,
+- `4` = Cancelled
+- `8` = Rejected |
+| 54 | `Side` | char | Yes | Side of order.
+
+Possible values:
+
+- `1` = Buy,
+- `2` = Sell |
+| 60 | `TransactTime` | UTCTimestamp | Yes | Timestamp when the transaction represented by this Execution Report occurred. Fix timestamp|
+| 12 | `Commission` | float | No | Deprecated. Always `0`|
+| 151 | `LeavesQty` | Qty | Yes | Order quantity open for further execution \(`LeavesQty` = `OrderQty` - `CumQty`\) in Contract units corresponding to the ContractMultiplier in SecurityList|
+| 14 | `CumQty` | Qty | Yes | Total executed quantity or 0.0 in Contract units corresponding to the ContractMultiplier in SecurityList|
+| 38 | `OrderQty` | Qty | Yes | Order quantity in Contract units corresponding to the ContractMultiplier in SecurityList|
+| 40 | `OrdType` | char | Yes | Order type.
+
+Possible values:- `1` = Market,
+- `2` = Limit (by default),
+- `4` = Stop Limit,
+- `S` = Stop Market
+
+|
+| 44 | `Price` | Price | Yes | Price |
+| 150| `ExecType` | char | No |Describes the specific Execution Report.
+
+Possible values: - `I` = equal to (Order Status),
+- `7` = (Stopped) for triggered stop orders,
+- `8` = Rejected,
+- `3` = (Done for day) for GTD orders,
+- `C` = (Expired) for the orders expired at delivery
+- `6` = "Participate don't initiate",
+- `A` = "No cross" (only together with 6, "`6A`" -- REJECT POST ONLY when the order is put to the order book unmodified or the request is rejected and order is cancelled), REDUCE ONLY possible values: - `E` = " Do not increase - DNI" |
+| 103 | `OrdRejReason` | int | Yes | Possible reasons: - `0` = no reject (the request has been accepted)
+- `1` = Unknown symbol
+- `2` = Exchange closed
+- `3` = Order exceeds limit
+- `
+- `5` = Unknown order
+- `6` =
+- `7` = Duplicate of a verbally communicated order
+- `8` = Stale
+- `9` = Trade along required
+- `10` = Invalid I
+- `11` = Unsupported order characteristic
+- `12` = Surveillance O
+- `13` = Incorrect quantity- `14` = Incorrect allocated quantity
+- `15` = Unknown account(s)
+- `16` = Price exceeds current price band
+- `18` = Invalid price increment
+
+**Note: Values 3, 4, and 5 will be used when rejecting an order due to pre-allocation information errors.** |
+| 58 | `Text` | String | No | Free format text string, usually exceptions |
+| 207 | `SecurityExchange` | String | No | "Deribit" |
+| 55 | `Symbol` | String | Yes | Instrument symbol |
+| 854 | `QtyType` | String | No | Type of quantity specified in a quantity. Currently only 1 - `Contracts` |
+| 231 | `ContractMultiplier` | float | No | Specifies a multiply factor to convert from contracts to total units |
+| 6 | `AvgPx` | float | No | Average execution price or 0.0 if not executed yet or rejected |
+| 1138 | `DisplayQty` | Qty | No | The (max) quantity to be displayed in the orderbook. Contract units corresponding to the ContractMultiplier in SecurityList|
+|9008| `DeribitMMProtection`| Boolean | No | Order Market Maker Protection (MMP) flag. **Important: manual admin action is necessary to activate Market Maker Protection MMP for an account** |
+| 100012 | `DeribitAdvOrderType` | char | No | If it is present then it denotes advanced order for options.
+
+Possible values:- `0` = Implied Volatility Order (price defines fixed implied volatility in %),
+- `1` = USD Order (price defines fixed USD price of the option, advanced USD orders are not supported for linear options)
+
+|
+| 1188 | `Volatility` | float | No | Volatility for Implied Volatility Orders (options orders with fixed volatility) |
+| 839 | `PeggedPrice` | Price | No | Value of fixed USD price for USD Orders (options orders with fixed USD price) |
+| 31 | `LastPx` | Price | No | Price of this last fill |
+| 32 | `LastQty` | Qty | No | Quantity bought/sold on this last fill.
+| 100010 | `DeribitLabel` | String | No | A custom label for your order, max 64 grapheme clusters. Can be used by [`Order Cancel Request`(`F`)](#order-cancel-request-f) to amend the order later on. **This tag operates on grapheme clusters. A grapheme cluster is a user-perceived character, which can be represented by several unicode codepoints. Please refer to [Unicode specification](https://unicode.org/reports/tr29/) for more details about the grapheme clusters**|
+| 9019	|	`MMPGroup` | String | No | A custom tag of MMP Group. This tag is present only for orders from Mass Quote |
+| 302	| QuoteSetID | String | No | identifier for the Quote Set. This tag is present only for orders from Mass Quote. |
+| 117	| QuoteID	 | String | No | identifier for the Quote. This tag is present only for orders from Mass Quote. |
+| 299	| QuoteEntryID	 | String | No | identifier for the Quote Entry. This tag is present only for orders from Mass Quote. |
+| | Group `FillsGrp` | | | |
+| 1362 | `NoFills` | NumInGroup| No | Number of fill entries for the order |
+| =&gt;1363 | `FillExecID` | String | No | Unique identifier of execution, concatenated via '\#' symbol and trade sequence number, e.g., **BTC-28SEP18#38** |
+| =&gt;1364 | `FillPx` | Price | No | Price of this partial fill |
+| =&gt;1365 | `FillQty` | Qty | No | Quantity bought/sold on this partial fill |
+| =&gt;1443 | `FillLiquidityInd` | int | No | Indicator to identify whether this fill was a result of a liquidity provider providing or liquidity taker taking the liquidity.
+
+Possible values:- `1` = Added Liquidity,
+- `2` = Removed Liquidity
+
+|
+
+When responding to a `MassStatusReqType`=`7` request, the server precedes the
+`Execution Reports`(`8`) messages with a special `Execution Reports`(`8`)
+message:
+
+| Tag | Name | Type | Required | Comments |
+|---|---|---|---|---|
+| 584 | `MassStatusReqID` | String | Yes | The `MassStatusReqID` from the request. (Only for the first message response to a `MassStatusReqType`=`7` request.) |
+| 585 | `MassStatusReqType` | int | Yes | The `MassStatusReqType` from the request. (Only for the first message response to a `MassStatusReqType`=`7` request.) |
+| 911 | `TotNumReports` | int | Yes | The total number of reports following this initial report |
+
+## `Request For Positions`(`AN`)
+
+`Request For Positions`(`AN`) is used by the owner of a position to request a
+Position Report.
+
+### Arguments
+
+| Tag | Name | Type | Required | Comments |
+|---|---|---|---|---|
+| 710 | `PosReqID` | String |Yes | Unique identifier for the `Request for Positions`(`AN`) as assigned by the submitter |
+| 724 | `PosReqType` | int |Yes | `0` = Positions \(currently\) |
+| 263 | `SubscriptionRequestType` | int | No | Subscription Request Type to get notifications about new or terminated instruments. Valid values: - `0` = Snapshot,
+- `1` = Snapshot + Updates (Subscribe),
+- `2` = Disable previous Snapshot + Update Request (Unsubscribe) |
+| 15 | `Currency` | String | No | To request for certain currency only. If it is missing, all currencies are reported |
+
+### Response
+
+The server will respond with a [`Position Report`(`AP`)](#position-report-ap)
+message.
+
+## `Position Report`(`AP`)
+
+The `Position Report`(`AP`) message is returned by the holder of a position in
+response to a [`Request For Positions`(`AN`)](#request-for-positions-an) message.
+
+### Arguments
+
+| Tag | Name | Type | Required | Comments |
+|---|---|---|---|---|
+| 721 | `PosMaintRptID` | String | Yes | Unique identifier for this position report |
+| 710 | `PosReqID` | String| No | Unique identifier for the Request for Positions associated with this report |
+| 724 | `PosReqType` | int | No | Used to specify the type of position request being made. `0` = Positions \(currently\) |
+| 728 | `PosReqResult` | int | No |Result of a Request for Position.
+
+Possible values: - `0` = success,
+- `1` = unsupported request for positions,
+- `99` = other
+
+|
+| | Group `PositionQty` | | |
+| 702 | `NoPositions` | NumInGroup | No | Number of position entries following |
+| =&gt;703 | `PosType` | String | No | Type of quantity.
+
+Possible values:- `TQ` = Transaction Quantity
+- `1` = Buy,
+- `2` = Sell |
+| =&gt;730 | `SettlPrice` | Price | No | Average price |
+| =&gt;96 | `RawData` | String | No | Additional info, semi-colon separated: maintenance margin;initial margin;floating P/L |
+| =&gt;100088 | `DeribitLiquidationPrice` | Price | No | Estimated liquidation price |
+| =&gt;100089 | `DeribitSizeInCurrency` | Qty | No | Size in the underlying currency, for example BTC or ETH |
+
+## `User Request`(`BE`)
+
+This message is used to request a report on a user's status and user account
+info.
+
+### Arguments
+
+| Tag | Name | Type | Required | Comments |
+|---|---|---|---|---|
+| 923 | `UserRequestID` | String | Yes | The request ID |
+| 924 | `UserRequestType` | int | Yes | Should be equal to `4` (Request individual user status\), only `UserRequestType`=`4` supported for now |
+| 553 | `Username` | String | Yes | API authenticated 'Client ID', user can request only own info, should be the same as for `LOGON`(`A`) |
+| 15 | `Currency` | String | No | Currency of the report. See [`Security List Request`(`x`)](#security-list-request-x). Default is BTC.
+
+If `CROSS` is given as currency and user has cross collateral enabled, only the following fields are returned:
+
+- 100001 `DeribitUserEquity`
+- 100003 `DeribitUserInitialMargin`
+- 100004 `DeribitUserMaintenanceMargin`
+- 100013 `DeribitMarginBalance`
+
+|
+
+### Response
+
+The server will respond with a `User Response`(`BF`) message.
+
+## `User Response`(`BF`)
+
+This message is used to respond to a [`USER REQUEST`(`BE`)](#user-request-be)
+message, it reports the status of the user and user's account info.
+
+### Response
+
+| Tag | Name | Type | Required | Comments |
+|--------|--------------------------------|--------|----------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 923 | `UserRequestID` | String | Yes | The request ID |
+| 553 | `Username` | String | Yes | User's API 'Client ID' |
+| 926 | `UserStatus` | int | No | `1` = logged in, current implementation accepts USER REQUEST-s only from logged in users |
+| 15 | `Currency` | String | No | Currency of the report. See [`Security List Request`(`x`)](#security-list-request-x). Default is BTC.
+
+If `CROSS` is given as currency and user has cross collateral enabled, only the following fields are returned:
+
+- 100001 `DeribitUserEquity`
+- 100003 `DeribitUserInitialMargin`
+- 100004 `DeribitUserMaintenanceMargin`
+- 100013 `DeribitMarginBalance`
+
+|
+| 100001 | `DeribitUserEquity` | float | No | Equity of the user |
+| 100002 | `DeribitUserBalance` | float | No | Balance of the user |
+| 100003 | `DeribitUserInitialMargin` | float | No | Initial margin of the user |
+| 100004 | `DeribitUserMaintenanceMargin` | float | No | Maintenance margin of the user |
+| 100005 | `DeribitUnrealizedPl` | float | No | Unrealized P/L of the user |
+| 100006 | `DeribitRealizedPl` | float | No | Realized P/L of the user |
+| 100011 | `DeribitTotalPl` | float | No | Total P/L of the user |
+| 100013 | `DeribitMarginBalance` | float | No | Margin Balance
+
+## `Order Cancel/Replace Request`(`G`)
+
+To change/edit the parameters of an existing order
+
+From Release 1.3.10, it is possible to amend order by `ClOrdID` or
+`DeribitLabel`, and `OrigClOrdId` is not required anymore, however amending
+orders by `OrigClOrdId` is noticeably faster.
+
+#### IMPORTANT:
+
+* to change the order using `ClOrdID` or `DeribitLabel`, this must be the only existing order with such `ClOrdID` or `DeribitLabel`. Multiple orders with the same `ClOrdID` or `DeribitLabel` won't be amended that way.
+* when possible it is recommended to use faster `OrigClOrdId`
+
+### Arguments
+
+| Tag | Name | Type | Required | Comments |
+|---|---|---|---|---|
+| 11 | `ClOrdID` | String | Required if `DeribitLabel`, `OrigClOrdId` are absent | Original order identifier assigned by the user, max 64 grapheme clusters. **This tag operates on grapheme clusters. A grapheme cluster is a user-perceived character, which can be represented by several unicode codepoints. Please refer to [Unicode specification](https://unicode.org/reports/tr29/) for more details about the grapheme clusters**|
+| 41 | `OrigClOrdId` | String | Required if `DeribitLabel`, `ClOrdID` are absent | Order identifier assigned by Deribit over the user one |
+| 100010 | `DeribitLabel` | String | Required if `OrigClOrdId`, `ClOrdID` are absent | A custom label for your order, max 64 grapheme clusters. Can be used by [`Order Cancel Request`(`F`)](#order-cancel-request-f) to amend the order later on|
+| 55 | `Symbol` | String | Yes | Instrument symbol, e.g., **BTC-1JAN16**|
+| 62 | `ValidUntilTime` | UTCTimestamp | No | Indicates expiration time of indication message, in UTC |
+| 15 | `Currency` | String | No | To speed up the search of the order by `DeribitLabel` or `ClOrdID`|
+| 54 | `Side` | char | Yes | Should match the original order's side.
+
+Valid values:
+
+- `1` = Buy,
+- `2` = Sell |
+| 38 | `OrderQty` | Qty | Yes | Order quantity. Depends on `QtyType`. When `QtyType` is set to `Units`, the `OrderQty` is specified in USD for perpetual and inverse futures, in the underlying base currency coin for linear futures, or in the amount of cryptocurrency contracts for options. The system will automatically convert `Units` to `Contracts` when the order is placed **Please, note that Quantity is by default defined in Contract units corresponding to the ContractMultiplier in SecurityList** |
+| 40 | `OrdType` | char | No | Currently `2` - 'limit' |
+| 44 | `Price` | Price | No | Order price (for advanced options orders it could be volatility or USD value if applicable) |
+| 18 | `ExecInst` | MultipleCharValue | No | Currently is used to mark POST ONLY orders and REDUCE ONLY orders.
+
+POST ONLY valid values:
+
+- `6` = "Participate don't initiate",
+- `A` = "No cross" (only together with 6, "`6A`" -- REJECT POST ONLY when the order is put to order the book unmodified or the request is rejected and order is cancelled), REDUCE ONLY valid values: - `E` = " Do not increase - DNI" |
+| 854 | `QtyType` | Int | No | Type of quantity. Valid values:
+
+- `0` = `Units`,
+- `1` = `Contracts`
+
+Default is `Contracts`.
+
+When `QtyType` is `Units`, then for perpetual and inverse futures the `OrderQty` is in USD units, and for linear futures it is the underlying base currency coin, and for options it is the amount of corresponding cryptocurrency contracts, e.g., BTC or ETH. The `Units` will be recalculated into the system's `Contracts` on server automatically when the order is placed.
+
+|
+| 1138 | `DisplayQty` | Qty | No | The (max) quantity to be displayed in the orderbook. |
+|9008| `DeribitMMProtection`| Boolean | No | Order Market Maker Protection (MMP) flag, if it is absent then the current MMP flag of the order is not changed. `N` removes the flag if it is set. **Important: manual admin action is necessary to activate Market Maker Protection (MMP) for an account** |
+
+### Response
+
+See `New Order Single`(`D`) response
+
+## `Execution Reports`(`8`) about order changes
+
+### Notification
+
+The report `Execution Reports`(`8`) is similar to New Order Single or
+Cancel/Replace responses
+
+| Tag | Name | Type | Required | Comments |
+|---|---|---|---|---|
+| 527 | `SecondaryExecID` | String | No | ID of the order change, may be absent in case of status reports |
+| 37| `OrderId` | String | No | Unique identifier for Order as assigned by the Deribit|
+| 11 | `ClOrdID` | String | No | Deribit replaces this field with the own value assigned by the server \(it is not the client id from [`New Order Single`(`D`)](#new-order-single-d)) |
+| 41 | `OrigClOrdId` | String | No | The original value assigned by the client in the [`New Order Single`(`D`)](#new-order-single-d) message |
+| 39 | `OrdStatus` | char | Yes | For trade – order status.
+
+Possible values:
+
+- `0` = New,
+- `1` = Partially filled,
+- `2` = Filled,
+- `4` = Cancelled
+- `8` = Rejected |
+| 54 | `Side` | char | Yes | Side of order.
+
+Possible values:
+
+- `1` = Buy,
+- `2` = Sell |
+| 60 | `TransactTime` | UTCTimestamp | Yes | Time the transaction represented by this Execution Report occurred. Fix timestamp |
+| 12 | `Commission` | float | No | Deprecated. Always `0` |
+| 151 | `LeavesQty` | Qty | Yes | Order quantity open for further execution \(`LeavesQty` = `OrderQty` - `CumQty`\) in Contract units corresponding to the ContractMultiplier in SecurityList|
+| 14 | `CumQty` | Qty | Yes | Total executed quantity or 0.0 in Contract units corresponding to the ContractMultiplier in SecurityList|
+| 38 | `OrderQty` | Qty | Yes | Order quantity in Contract units corresponding to the ContractMultiplier in SecurityList|
+| 5127 | `ConditionTriggerMethod` | int | No | Trigger for a stop order.
+
+Possible values: - `1` = Mark Price,
+- `2` = Last Price,
+- `3` = corresponding Index Price
+
+|
+| 40 | `OrdType` | char | Yes | Order type.
+
+Possible values:- `1` = Market,
+- `2` = Limit,
+- `4` = Stop Limit,
+- `S` = Stop Market (default: limit)
+
+|
+| 44 | `Price` | Price | No | Price, maybe be absent for Market and Stop Market orders |
+| 150| `ExecType` | char | No |Describes the specific Execution Report.
+
+Possible values: - `I` = equal to (Order Status),
+- `7` = (Stopped) for triggered stop orders,
+- `8` = Rejected,
+- `3` = (Done for day) for GTD orders,
+- `C` = (Expired) for the orders expired at delivery
+- `6` = "Participate don't initiate",
+- `A` = "No cross" (only together with 6, "`6A`" -- REJECT POST ONLY when the order is put to the order book unmodified or the request is rejected and order is cancelled), REDUCE ONLY possible values: - `E` = " Do not increase - DNI" |
+| 99 | `StopPx`| Price | No | Stop price for stop limit orders |
+| 103 | `OrdRejReason` | int | Yes | Possible reasons: - `0` = no reject (the request has been accepted)
+- `1` = Unknown symbol
+- `2` = Exchange closed
+- `3` = Order exceeds limit
+- `
+- `5` = Unknown order
+- `6` =
+- `7` = Duplicate of a verbally communicated order
+- `8` = Stale
+- `9` = Trade along required
+- `10` = Invalid I
+- `11` = Unsupported order characteristic
+- `12` = Surveillance O
+- `13` = Incorrect quantity- `14` = Incorrect allocated quantity
+- `15` = Unknown account(s)
+- `16` = Price exceeds current price band
+- `18` = Invalid price increment
+
+**Note: Values 3, 4, and 5 will be used when rejecting an order due to pre-allocation information errors.** |
+| 58 | `Text` | String | No | Free format text string, usually exceptions |
+| 207 | `SecurityExchange` | String| No | "Deribit" |
+| 55 | `Symbol` | String | Yes | Instrument symbol |
+| 854 | `QtyType` | int | No | Type of quantity specified in a quantity. Currently only 1 - `Contracts` |
+| 231 | `ContractMultiplier` | float | No | Specifies a multiply factor to convert from contracts to total units |
+| 6 | `AvgPx` | float | No | Average execution price or 0.0 if not executed yet or rejected |
+| 1138 | `DisplayQty` | Qty | No | The (max) quantity to be displayed in the orderbook. |
+| 100012 | `DeribitAdvOrderType` | int | No | If it is present then it denotes advanced order for options.
+
+Possible values:- `0` = Implied Volatility Order (price defines fixed implied volatility in %),
+- `1` = USD Order (price defines fixed USD price of the option, advanced USD orders are not supported for linear options)
+
+|
+| 1188 | `Volatility` | float | No | Volatility for Implied Volatility Orders (options orders with fixed volatility) |
+| 839 | `PeggedPrice` | Price | No | Value of fixed USD price for USD Orders (options orders with fixed USD price) |
+| 31 | `LastPx` | Price | No | Price of this last fill |
+| 32 | `LastQty` | Qty | No | Quantity bought/sold on this last fill |
+| 880 | `TrdMatchID` | String | No | Identifier assigned to a trade by a matching system. It can be present for trade execution reports if Logon `9015=Y` |
+| 100010 | `DeribitLabel` | String | No | A custom label for your order, max 64 grapheme clusters. Can be used by [`Order Cancel Request`(`F`)](#order-cancel-request-f) to amend the order later on. **This tag operates on grapheme clusters. A grapheme cluster is a user-perceived character, which can be represented by several unicode codepoints. Please refer to [Unicode specification](https://unicode.org/reports/tr29/) for more details about the grapheme clusters|
+| 9008 | `DeribitMMProtection` | Boolean | No | Order Market Maker Protection (MMP) flag |
+| 9019 |	`MMPGroup` | String | No | A custom tag of MMP Group. This tag is present only for orders from Mass Quote |
+| 302	| QuoteSetID | String | No | identifier for the Quote Set. This tag is present only for orders from Mass Quote. |
+| 117	| QuoteID	 | String | No | identifier for the Quote. This tag is present only for orders from Mass Quote. |
+| 299	| QuoteEntryID	 | String | No | identifier for the Quote Entry. This tag is present only for orders from Mass Quote. |
+| | Group `FillsGrp` | | | |
+| 1362 | `NoFills` | NumInGroup| No | Number of fill entries for the order |
+| =&gt;1363 | `FillExecID` | String | No | Unique identifier of execution, concatenated via '\#' symbol and trade sequence number, e.g., BTC-28SEP18#38** |
+| =&gt;1364 | `FillPx` | Price | No | Price of this partial fill |
+| =&gt;1365 | `FillQty` | Qty | No | Quantity bought/sold on this partial fill |
+| =&gt;1443 | `FillLiquidityInd` | int | No | Indicator to identify whether this fill was a result of a liquidity provider providing or liquidity taker taking the liquidity.
+
+Possible values:- `1` = Added Liquidity,
+- `2` = Removed Liquidity
+
+|
+
+## `Security Status Request`(`e`)
+
+This message provides for the ability to request the status of a security.
+
+### Arguments
+
+| Tag | Name | Type | Required | Comments |
+|-----|---------------------------|--------|----------|----------------------------------------------------------------------|
+| 324 | `SecurityStatusReqID` | String | Yes | ID of the request |
+| 55 | `Symbol` | String | Yes | Instrument symbol. See instrument naming convention for more details |
+| 263 | `SubscriptionRequestType` | char | Yes | `0` = `Snapshot`, `1` = `Snapshot + Updates` (`Subscribe`), `2` = `Unsubscribe`
+
+(Please note that our system does not send notifications when currencies are **locked**. Users are advised to subscribe to the [platform_state](https://docs.deribit.com/#platform_state) channel to monitor the state of currencies actively.)
+
+|
+
+### Response
+
+The server will respond with a [`Security Status` (`f`)](#security-status-f)
+message.
+
+## `Security Status` (`f`)
+
+The `Security Status` (`f`) message provides for the ability to report changes
+in status to a security.
+
+### Response
+
+| Tag | Name | Type | Required | Comments |
+|---|---|---|---|---|
+| 324 | `SecurityStatusReqID` | String | No | ID of the request |
+| 55 | `Symbol` | String | Yes | Instrument symbol |
+| 326 | `SecurityTradingStatus` | int | No | Identifies the trading status.
+
+Possible values: - `7` = Ready to trade,
+- `8` = Not Available for trading,
+- `20` = Unknown or Invalid
+
+|
+| 330 | `BuyVolume` | float | No | Volume in buy contracts, absent if there weren't any trades |
+| 331 | `SellVolume` | float | No | Volume in sell contracts, absent if there weren't any trades |
+| 332 | `HighPx `| Price | No | Price of the 24h highest trade, absent if there weren't any trades |
+| 333 | `LowPx` | Price | No | Price of the 24h lowest trade, absent if there weren't any trades |
+| 31 | `LastPx` | Price | No | The price of the latest trade, absent if there weren't any trades|
+| 58 | `Text` | String | No | Explanatory text string of `SubscriptionRequestType` outcome.
+
+Possible values: - `success` = Snapshot successfully provided,
+- `subscribed` = Subscription confirmed,
+- `unsubscribed` = Subscription cancelled
+
+|
+
+## `MMProtection Limits (MM)`
+
+**Important: manual admin action is necessary to activate Market Maker
+Protection (MMP) for an account.** The `MMProtection Limits (MM)` message can be
+used to set or get the limits for Market Maker Protection (MMP) for a currency pair.
+
+**Max Quote Quantity (MQQ):** The `MaxQuoteQuantity` parameter determines the total combined size of open MMP orders per side, per order book, that cannot be exceeded (measured in base currency).
+
+**Important Notes:**
+
+- **MQQ limits cumulative size, not order count:** For example, with MQQ of 3 BTC, you can place orders totaling 3 BTC per side per instrument
+- **Base currency:** MQQ is specified and enforced in base currency
+- **Inverse futures:** Size is calculated as Amount / Price to convert to base currency
+- **Inverse future spreads:** Size is calculated as Amount / IndexPrice
+- **SM accounts:** MMP orders and quotes on options and option_combos are not supported for SM accounts
+- **Rejections:** Individual quotes and MMP orders above `MaxQuoteQuantity` are rejected
+- **Precision:** All MMP configuration values support maximum 4 decimal places
+- **Current margin calculation:** Currently, `ProtectionQtyLimit` is used for margin calculation (will switch to `MaxQuoteQuantity` in December 2025)
+
+**Coming in December 2025 Release:**
+
+- **Margin calculation:** Will switch completely from `ProtectionQtyLimit` to `MaxQuoteQuantity` (3% of MQQ)
+- **Inverse future spreads:** Size calculation will switch from IndexPrice to minimum mark price of legs
+- **Quote rejection:** If one side of a quote is rejected, the other side will also be rejected
+
+### Arguments
+
+| Tag | Name |Type| Required | Comments |
+|---|---|---|---|---|
+| 20114 | `ProtectionRequestID` | String | Yes | Unique identifier assigned by the requestor. Will be returned in responses |
+| 15 | `Currency` | String | Yes | First currency of the currency pair to set or get MMP for e.g. `BTC`, `ETH` |
+| 5544 | `SecondaryCurrency` | String | No | Secondary currency of the currency pair to set or get MMP for. e.g. `USD`, `USDC`, defaults to `USD` if not provided |
+| 20110 | `ProtectionQtyLimit` | float | No | Specify the limit of the total size (measured in base currency) per underlying within the exposure time interval when market maker protection is triggered. When this value is met or exceeded the system automatically removes the quotes for the instruments connected to the underlying. Maximum 4 decimal places. |
+| 20111 | `ProtectionDeltaLimit` | float | No | The limit of the delta value per underlying within the exposure time interval when market maker protection is triggered. When this value is met or exceeded the system automatically removes the quotes for the instruments connected to the underlying. Maximum 4 decimal places. |
+| 20112 | `FrozenLimit` | float | Yes | Time interval in seconds when quotes are rejected after market maker protection has been triggered |
+| 20116 | `IntervalLength` | int | Yes | Interval Length in seconds |
+| 20118 | `ProtectionVegaLimit` | float | No | The limit of the vega value per underlying within the exposure time interval when market maker protection is triggered. When this value is met or exceeded the system automatically removes the quotes for the instruments connected to the underlying. Maximum 4 decimal places. |
+| 20119 | `MaxQuoteQuantity` | float | No | Maximum Quote Quantity (MQQ) in base currency. The total combined size of open MMP orders per side, per order book, cannot exceed MQQ. MQQ limits cumulative order size, not the number of orders. For inverse futures: size is calculated as Amount / Price. For inverse future spreads: size is calculated as Amount / IndexPrice. Individual MMP orders and quotes above Max Quote Quantity are rejected. Maximum 4 decimal places. **Starting December 2025 release:** (1) MQQ will also be used for Initial Margin calculation (3% of MQQ will be taken as Initial Margin for MMP orders and quotes; currently ProtectionQtyLimit is used for margin), and (2) for inverse future spreads, size calculation will switch from IndexPrice to minimum mark price of legs. |
+| 9019	|	`MMPGroup` | String | No | A custom tag of MMP Group |
+
+* To set `MMProtection Limits`, the message must contain all fields. In reply to this message, the server sends [`MMProtection Limits Result/Reject` (`MR`)](#mmprotection-limits-resultreject-mr).
+* To get current `MMProtection Limits`, the message must contain only `ProtectionRequestID` (`20114`) and `Currency` (`15`) fields (without all limits). In reply to this message, the server sends `MMProtection Limits (MM)` message with filled limits.
+
+## `MMProtection Limits Result/Reject` (`MR`)
+
+**Important: manual admin action is necessary to activate Market Maker
+Protection (MMP) for an account.** This message is sent by the server in reply
+to [`MMProtection Limits` (`MM`)](#mmprotection-limits-mm) or [`MMProtectionReset` (`MZ`)](#mmprotection-reset-mz)
+
+### Response
+
+| Tag | Name | Type | Required | Comments |
+|-------|---------------------------|---------|----------|---------------------------------------------------------------------------------------------------------------|
+| 20114 | `ProtectionRequestID` | String | Yes | Identifier taken from corresponding [`MM`](#mmprotection-limits-mm) or [`MZ`](#mmprotection-reset-mz) message |
+| 20117 | `ProtectionRequestResult` | Boolean | Yes | `Y` = applied or succeeded, `N` = rejected |
+| 58 | `Text` | String | No | Text describes reject reason or equal to ``"success"`` |
+
+## `MMProtection Reset` (`MZ`)
+
+**Important: manual admin action is necessary to activate Market Maker
+Protection (MMP) for an account.** This message resets Market Maker Protection
+(MMP) after triggering.
+
+### Arguments
+
+| Tag | Name | Type | Required | Comments |
+|-------|-----------------------|--------|----------|-----------------------------------------------------------------------------------------------------------------|
+| 20114 | `ProtectionRequestID` | String | Yes | Unique identifier assigned by the requestor. Will be returned in responses |
+| 15 | `Currency` | String | Yes | First currency of the currency pair to reset MMP for. e.g. `BTC`, `ETH` |
+| 5544 | `SecondaryCurrency` | String | No | Secondary currency of the currency pair to reset MMP for. e.g. `USD`, `USDC`, defaults to `USD` if not provided |
+| 9019	|	`MMPGroup` | String | No | A custom tag of MMP Group |
+
+### Response
+
+The server sends `MMProtection Result (MR)` message as a response.
+
+## `Security Definition Request` (`c`)
+
+Request a specific Security to be traded with the second party. The request
+security is defined as a multileg security made up of two or more instrument
+legs. Also it can be used to query a list of combo-instrument securities offered
+by a trading parties. (this method is FIX equivalent of `private/create_combo`,
+`public/get_combo_ids` and `private/get_combo_details` request for WS/HTTPS
+end-points depending on `SecurityRequestType (321)` tag value).
+
+### Arguments
+
+| Tag | Name | Type | Required | Comments |
+|---|---|---|---|---|
+| 320	| `SecurityReqID`	| String | Yes | Request identifier|
+| 321	| `SecurityRequestType`	| int | Yes | Type of `Security Definition Request`(`c`).
+
+Valid values: - `0` = Request Security details, specifications by `SecurityId`,
+- `1` = Request Security identity for the specifications provided, the combo-instrument will be created if necessary.
+- `3` = Request list of existing combo-instruments
+
+|
+| 15 | `Currency` | String | Yes | Required is `SecurityRequestType` = `3`, examples: `BTC`, `ETH`|
+| 48 | `SecurityID` | String | No | Required if `SecurityRequestType` = `0`. Identifies combo instrument.|
+| | Group `InstrmtLegGrp` | | |
+| 555 | `NoLegs` | int | Yes | Number of legs that make up the Security|
+| =&gt;600| `LegSymbol` | String | No | Non-combo instrument name|
+| =&gt;624|	`LegSide` | char | No | Valid values:- `1` = Buy,
+- `2` = Sell|
+| =&gt;623| `LegRatioQty` | int | No | Positive integer for the strategy |
+
+### Response
+
+The server sends [`Security Definition (d)`](#security-definition-d) message as
+a response, or rejects the request
+
+## `Security Definition` (`d`)
+
+The Security Definition `<d>` message is used for the following:
+
+* Accept the security defined in a [`Security Definition Request (c)`](#security-definition-request-c) message with changes to the definition and/or identity of the security.
+* Reject the security requested in a Security Definition Request message
+
+| Tag | Name | Type | Required | Comments |
+|---|---|---|---|---|
+| 320	| `SecurityReqID`	| String | Yes | Request identifier|
+| 322 | `SecurityResponseID` | sting | Yes | Equal to the `SecurityReqID`|
+| 323	| `SecurityResponseType`	| int | Yes | Type of Security Definition response.
+
+Valid values: - `2` = accept security proposal with possible revisions as indicated in the message,
+- `5` = reject proposal
+
+|
+| 55 | `Symbol` | String | No | Common, "human understood" representation of the security |
+| 48 | `SecurityID` | String | No | Takes precedence in identifying security to counterparty.|
+| 22 | `SecurityIDSource` | String | No | `101` = Multi-cast identifier, `102` = Combo instrument identifier|
+| 225 | `IssueDate` | UTCTimestamp | No | Creation timestamp|
+| 873 | `DatedDate` | UTCTimestamp | No | State timestamp|
+| 58 | `Text` | String | No | Explanatory text string|
+| | Group `UnderlyingInstrument` | | |
+| 711 | `NoUnderlyings` | int | No | Number of underlying items in the group, if applicable. Underlying group is present in reply to [`Security Definition Request (c)`](#security-definition-request-c) with `SecurityRequestType(321)` = 3 |
+| =&gt;311 | `UnderlyingSymbol` | String | No | Combo-instrument symbols in reply to [`Security Definition Request (c)`](#security-definition-request-c) with `SecurityRequestType(321)` = 3 |
+| 965 | `SecurityStatus` | String | No | Denotes the current state of the Instrument.
+
+Valid values: - `1` = Active,
+- `2` = Inactive,
+- `3` = RFQ,
+- `4` = Closed,
+- `12` = Archivized
+
+|
+| | Group `InstrmtLegGrp` | | |
+| 555 | `NoLegs` | int | Yes | Number of legs that make up the Security|
+| =&gt;600| `LegSymbol` | String | No | Non-combo instrument name|
+| =&gt;623| `LegRatioQty` | int | No | Positive or negative adjusted to the strategy definition|
+
+## `TradeCaptureReportRequest` (`AD`)
+
+Request one or more trade capture reports based upon selection criteria provided
+on the trade capture report request.
+
+| Tag | Name | Type | Required | Comments |
+|-----|--------------------|--------|----------|----------------------------------------------------------------------------------------------------------------------------------------------|
+| 568 | `TradeRequestID` | String | Yes | Identifier for the trade request |
+| 569 | `TradeRequestType` | Int | Yes | Describes request type.
+
+Valid value:- `0` for all trades
+
+|
+| 55 | `Symbol` | String | Yes | Common, "human understood" representation of the security, e.g., **BTC-28JUL17**, see instrument naming convention for more details |
+| 263	| `SubscriptionRequestType`| char | No | Used to subscribe / unsubscribe for trade capture reports If the field is absent, the value 1 will be the default (subscription). Valid values:
+
+- 1 = Subscribe
+- 2 = Unsubscribe
+
+(Note: 0 = Snapshot is not implemented for now) |
+## `TradeCaptureReportRequestAck` (`AQ`)
+
+The Trade Capture Request Ack message is used to:
+* Provide an acknowledgement to a Trade Capture Report Request in the case
+where the Trade Capture Report Request is used to specify a subscription.
+* The Trade Capture Request was invalid for some business reason, such as the
+request is not authorized, invalid or unknown instrument, party, trading
+session, etc.
+
+| Tag | Name | Type | Required | Comments |
+|-----|----------------------|--------|----------|----------------------------------------------------------------------------------------------------------------------------------------------|
+| 568 | `TradeRequestID` | String | Yes | Identifier for the trade request |
+| 569 | `TradeRequestType` | Int | Yes | Describes request type.
+
+Valid value:- `0` for all trades
+
+|
+| 571 | `TradeRequestResult` | Int | Yes | Result of Trade Request.
+
+Valid values:- `0` - Successful
+- `2` - Invalid type of trade requested
+
+|
+| 750 | `TradeRequestStatus` | Int | Yes | Status of Trade Request.
+
+Valid values:- `0` - Accepted
+- `2` - Rejected
+
+|
+| 55 | `Symbol` | String | Yes | Common, "human understood" representation of the security, e.g., **BTC-28JUL17**, see instrument naming convention for more details |
+
+## `TradeCaptureReport` (`AE`)
+
+Used to report trades between counterparties.
+
+| Tag | Name | Type | Required | Comments |
+|----------|----------------------|--------------|----------|----------------------------------------------------------------------------------------------------------------------------------------------|
+| 568 | `TradeRequestId` | String | No | Request ID if the Trade Capture Report is in response to a Trade Capture Report Request |
+| 570 | `PreviouslyReported` | Boolean | Yes | Indicates if the trade capture report was previously reported to the counterparty |
+| 55 | `Symbol` | String | Yes | Common, "human understood" representation of the security, e.g., **BTC-28JUL17**, see instrument naming convention for more details |
+| 32 | `LastQty` | Qty | Yes | Trade Quantity |
+| 31 | `LastPx` | Price | Yes | Trade Price |
+| 1003 | `TradeId` | String | Yes | The unique ID assigned to the trade |
+| 1040 | `SecondaryTradeId` | String | No | Block Trade ID or Combo Trade ID |
+| 75 | `TradeDate` | LocalMktDate | Yes | Indicates date of trade referenced in this message in YYYYMMDD format. |
+| 60 | `TransactTime` | UTCTimestamp | Yes | Time of execution/order creation (expressed in UTC (Universal Time Coordinated, also known as "GMT") |
+| 555 | `NoLegs` | NumInGroup | No | Number of legs. Identifies a Multi-leg Execution if present and non-zero. |
+| =&gt;600 | `LegSymbol` | String | No | Multileg instrument's individual security's Symbol. |
+| =&gt;687 | `LegQty` | Qty | Yes | Quantity of the leg |
+| =&gt;566 | `LegPrice` | Price | Yes | Price for leg of a multileg |
+| =&gt;624 | `LegSide` | Char | Yes | The side of this individual leg (multileg security).
+
+Valid values: - `1` - Buy
+- `2`- Sell
+
+|
+| 552 | `NoSides` | NumInGroup | Yes | Number of sides |
+| =&gt;54 | `Side` | Char | Yes | Side of order.
+
+Valid values: - `1` - Buy
+- `2`- Sell
+
+|
+| =&gt;37 | `OrderId` | String | Yes | Unique identifier for Order as assigned by sell-side |
+| =&gt;12 | `Commission` | Amt | Yes | Commission deducted from the requesting party |
+| =&gt;479 | `CommCurrency` | Currency | Yes | Specifies currency to be use for Commission &lt;12&gt; |
+
+## `Mass Quote` (`i`)
+Place buy and/or sell orders on one or more instruments. This endpoint can only be used after approval from the administrators. The repeating group structure follows the standard FIX specification, as follows:
+
+| Tag | Name | Type | Required | Comments |
+|----------|----------------------|--------------|----------|----------------------------------------------------------------------------------------------------------------------------------------------|
+| 117	 | `QuoteID` | String | Yes | Identifier of a mass quote message. Can be used to match trades to requests. We recommend using an incrementing counter. |
+| 9019 | `MMPGroup` | String | Yes | Custom tag of the MMP group. An MMP group has to be used and only one quote can exist per instrument per side per MMP group. |
+| 62 | `ValidUntilTime` | UTCTimestamp | No | Indicates expiration time of indication for the request, in UTC. |
+| 296 | `NoQuoteSets` | NumInGroup | Yes | The number of QuoteSets in the repeating group. |
+| =&gt; 302| `QuoteSetID` | String | Yes | Identifier for the QuoteSet. Can be used in `Quote Cancel` (`Z`). |
+| =&gt; 304| `TotNoQuoteEntries` | int | No | Total number of quotes for the quote set. IMPORTANT: For now, splitting QuoteSets over several messages is not supported. |
+| =&gt;	295| `NoQuoteEntries`	 | NumInGroup | Yes | Number of quotes in the QuoteSet repeating group. |
+| =&gt;	=&gt;	299|	`QuoteEntryID`	| String | Yes | Identifier of the quote. It is echoed in the `Mass Quote Acknowledgement` (`b`). |
+|=&gt;	=&gt;	55 |	`Symbol` | String | Yes | Common, "human understood" representation of the security, e.g., **BTC-28JUL17**, see instrument naming convention for more details. |
+|=&gt;	=&gt;	132|	`BidPx`	 | Price | No | Bid price. If no price is supplied, only the quantity is amended. |
+|=&gt;	=&gt;	133| `OfferPx` | Price | No | Offer price. If no price is supplied, only the quantity is amended. |
+|=&gt;	=&gt;	134|	`BidSize`	 | Qty | No | Bid quantity in contracts. If no quantity is supplied, only the price is amended. |
+|=&gt;	=&gt;	135| `OfferSize`	 | Qty | No | Offer quantity in contracts. If no quantity is supplied, only the price is amended. |
+|=&gt;	=&gt;	18 | `ExecInst` | MultipleCharValue | No | Supports post-only and post-only-reject, see `NewOrderSingle` (`D`). |
+
+`Mass Quote` (`i`) requires `Cancel On Disconnect` enabled and MMP.
+
+Request example:
+
+MassQuote
+QuoteID="MyQuote1"
+9019="default"
+NoQuote_sets=1
+QuoteSetID=1
+TotNoQuoteEntries=2
+NoQuoteEntries=2
+	 QuoteEntry_id=1
+Symbol="BTC-PERPETUAL"
+BidPx=41000.0
+OfferPx=42000.0
+BidSize=10.0
+OfferSize=10.0
+	 QuoteEntryID=2
+Symbol="BTC-29DEC23"
+BidPx=41500.0
+BidSize=5.0
+
+In reply to `Mass Quote` (`i`), the server sends `Mass Quote Acknowledgement` (`b`) message as well as corresponding `Execution Report`-s (`8`). The reports and acknowledgement are send asynchronously and via different queues, so the precedence of acknowledgement message is not guaranteed.
+
+## `Mass Quote Acknowledgement` (`b`)
+
+`Mass Quote Acknowledgement` (`b`) is a reply to a `Mass Quote` (`i`) message. The message contains orders, trades and possible errors resulting from the `Mass Quote` (`i`) message. The `QuoteEntries` are not grouped by `QuoteSets` for performance reasons, only marked with `QuoteSetID`s.
+
+| Tag | Name | Type | Required | Comments|
+|----------|----------------------|--------------|----------|---------|
+|117	 | `QuoteID` |	String | No	 | The same QuoteID as supplied in the `Mass Quote` (`i`) message. |
+|297	 | `QuoteStatus` |	int | Yes | Status of the mass quote as a whole. `0` = `Accepted`, `5` = `Rejected` |
+|300	 | `QuoteRejectReason` | int | No | Reason `Mass Quote` (`i`) was rejected. `1` = Unknown symbol (Security), `2` = Exchange(Security) closed, `3` = `Mass Quote` (`i`) size exceeds limit, `4` = Timed out (Too late to enter), `9` = Not allowed to quote security, `99` = Other|
+|295	 | `NoQuoteEntries`	 | NumInGroup | No | Number of quotes in the repeating group. |
+|=&gt; 299 | `QuoteEntryID` | String | No | Echoed from the `Mass Quote` (`i`) message for orders. For trades, it is the trade ID.|
+|=&gt; 9020 | `QuoteEntryType` | int | No | `0` = order, `1` = trade, `2` = error |
+|=&gt; 302 | `QuoteSetID` | String | No | Identifier of the QuoteSet supplied in `Mass Quote` (`i`). Only present for orders. |
+|=&gt; 1167 | `QuoteEntryStatus` | int | No | Status of individual Quote Entry. `0` = Accepted, `5` = Rejected, `17` = Cancelled, `0` = Accepted, `5` = Rejected, `17` = Cancelled, `18` = Cancelled by MMP, `19` = Replaced, `20` = Filled, `21` = Open, `22` = Closed, `23` = Triggered, `24` = Untriggered, `25` = Unknown |
+|=&gt;	55 |	`Symbol` | String | No | Common, "human understood" representation of the security, e.g., `BTC-28JUL17`, see instrument naming convention for more details. |
+|=&gt;	54 | `Side` | char | No | Side of the entry. |
+|=&gt;	192 | `OrderQty2` | Qty | No | Size of the trade in contracts, in case of a trade. |
+|=&gt; 37	 | `OrderId`	 | String	 | No	 | Unique identifier of the quote, assigned by the exchange. It follows the format of OrderIDs for regular orders. |
+|=&gt; 60 | `TransactTime` | UTCTimestamp | No | Timestamp of the transaction. |
+|=&gt;	132 |	`BidPx` | Price | No | Bid price. |
+|=&gt;	134 |	`BidSize`	 | Qty | No | Bid quantity in contracts. |
+|=&gt;	133 | `OfferPx` | Price | No | Offer price. |
+|=&gt;	135 | `OfferSize` | Qty | No | Offer quantity in contracts. |
+|=&gt; 368 | `QuoteEntryRejectReason` | int | No | RPC error code, in case of an error. |
+|=&gt;	58 | `Text` | String | No | The error description, in case of an error. |
+
+## `Quote Cancel` (`Z`)
+The `Quote Cancel` (`Z`) message is used by an originator of quotes to cancel his quotes and related orders.
+
+The Quote Cancel message supports cancelation of:
+* All quotes
+* Quotes for a specific symbol
+* All quotes for a security kind (like futures, options)
+* By QuoteSetID
+* By base Currency of the instruments
+* By Delta range
+
+The canceling is accomplished by indicating the type of cancelation in the `QuoteCancelType` (`298`) field and optional additional parameters.
+
+The message is equivalent of the `private/cancel_quotes` and shares the same semantic, so it is quite different from the other exchanges. The same as the Websockets "alter-ego" it is acknowledged only via list (possibly empty) of cancelled orders, namely as the `Order Mass Cancel Report` (`r`) with `ClOrdID` equal to the `QuoteMsgID` of the request, with the affected order ID's and subsequent `Execution Report` (`8`)-s for each individual cancelled order if there are any.
+
+| Tag | Name | Type | Required | Comments|
+|----------|----------------------|--------------|----------|---------|
+| 1166 | `QuoteMsgID` |	String | No | Optionally used to supply a message identifier for a quote cancel. |
+| 298 | `QuoteCancelType` | int |	No | Default is 4.	Identifies the type of `Quote Cancel` (`Z`) request. 1 = Cancel for `Symbol`(`55`), 2 = Cancel for `SecurityType` (`167`), 4 = Cancel All Quotes, 5 = for `Currency` (`5`), 6 = for `QuoteSetID` (`302`), 7 = for Delta range defined by `MinDelta` and `MaxDelta` see below |
+|	55 |	`Symbol` | String | Required if `QuoteCancelType` = 1 | Common, "human understood" representation of the security, e.g., `BTC-28JUL17`, see instrument naming convention for more details. |
+| 15 | `Currency` | String | if `QuoteCancelType` = 2, 5 or 7 | Currency |
+| 9031 | `FreezeQuotes` | Boolean | No | Whether or not to reject incoming quotes for 1 second after cancelling |
+| 167 | `SecurityType` | String | If `QuoteCancelType`=2 | Describes type of security.
+
+Possible values: - `FUT` for futures,
+- `OPT` for options,
+- `FUTCO` for future combo,
+- `OPTCO` for option combo
+- `SPOT` for spot
+
+|
+| 302 | `QuoteSetID` | String | Required if `QuoteCancelType` = 6 | Identifier for the Quote Set |
+| 9032 | `MinDelta` | float | Required if `QuoteCancelType` = 7 | Min Delta to cancel by delta range |
+| 9033 | `MaxDelta` | float | Required if `QuoteCancelType` = 7 | Max Delta to cancel by delta range |
+
+## Changes Log
+
+### Release 07.10.2025
+
+* Removed deprecated RFQ messages as previously announced.
+* Removed Quote Request (R)
+* Removed Quote Request Reject (AG)
+* Removed Quote Status Report (AI)
+* Removed RFQ Request (AH)
+
+### Release 10.06.2025
+* `MaxShow(210)` is replaced with `DisplayQty(1138)`. The iceberg orders cannot be fully invisible anymore. Setting the `DisplayQty (1138)` = 0 is interpreted as no hidden volume, i.e. the full order quantity is displayed to the market. Omitting the field gives the same result.
+* `Execution Reports` (`8`): added nonmandatory tag `RefreshQty` (`1088`)
+
+### Release 06.03.2025
+
+* Support for non-printable ASCII characters (such as control characters ranging from 0x00 to 0x1F) in string values has been removed to ensure compliance with the WS/REST API. Attempting to use non-printable ASCII characters will now result in a decoding error.
+
+### Release 04.02.2025
+
+* `Order Cancel/Replace Request` (`G`): removed support of undocumented tag `MaxShow` (`210`) in compliance with WS/REST API
+
+{/* ### Release 03.09.24
+* `Order Mass Status Request`(`AF`): added `History`(`10`) value of the `MassStatusReqType`(`585`) tag for retrieving history of orders that have been partially or fully filled, added optional tags `OrderHistoryIncludeUnfilled` (`9037`), `OrderHistoryOffset` (`9039`), `TotNumReports` (`911`). */}
+### Release 08.08.24
+* `Order Mass Cancel Request` (`q`): added `FreezeQuotes` (`9031`) tag
+
+### Release 03.07.24
+* `Mass Quote Acknowledgement` (`b`): added more values of `QuoteEntryStatus` (`1167`)
+* `MMProtection Limits` (`MM`): added `ProtectionVegaLimit` (`20118`)
+
+### Release 04.06.24
+* `New Order Single` (`D`): added nonmandatory tag `ValidUntilTime` (`62`)
+* `Order Cancel/Replace Request` (`G`): added nonmandatory tag `ValidUntilTime` (`62`)
+* `Mass Quote` (`i`): added nonmandatory tag `ValidUntilTime` (`62`)
+* `Execution Reports` (`8`): added nonmandatory tags `IsLiquidation` (`9034`), `IsRebalance` (`9035`), `IsRiskReducing` (`9036`)
+* `SecurityListRequest` (`x`): added `Currency`, `SecurityType`, `SecondaryCurrency`
+
+### Release 09.03.24
+* `SecurityStatusRequest` (`e`): added subscription
+* `SecurityStatus` (`f`): added Text field
+* Changed scope for `MMProtection Limits` (`MM`) from `account` to `trade`
+
+### Release 13.02.24
+* Added `Mass Quote` (`i`)
+* Added `Mass Quote Acknowledgement` (`b`)
+* `Execution Reports` (`8`): added nonmandatory tags `MMPGroup` (`9019`), `QuoteSetID` (`302`), `QuoteID` (`117`), `QuoteEntryID` (`299`) related to Mass Quoting
+* Added `Quote Cancel` (`Z`)
+* `Mass Cancel Report` (`r`): added one more type for `MassCancelRequestType`, added optional field `QuoteCancelType` for mass cancel reports generated by `Quote Cancel` (`Z`), `ClOrdID` is not required tag anymore
+* `MMProtection Reset` (`MZ`), `MMProtection Limits` (`MM`) -- added optional `MMPGroup`.
+
+### Release 12.12.23
+* Fixed an issue where `Reject` (`3`) was incorrectly returned instead of `OrderCancelReject` (`9`), with the specified `ClOrdID`, `DeribitLabel`, or `OrigClOrdId`, in response to an `Order Cancel Request` (`F`).
+
+### Release 1.3.21
+* `User Request`(`BE`): added `CROSS` as currency
+
+### Release 1.3.20
+* DeribitLiquidation is hidden from the public for the first hour after the trade (to prevent abusing).
+
+### Release 1.3.19
+* changed `MMProtectionLimits` and `MMProtectionReset` to work with currency pair instead of a single currency.
+
+### Release 1.3.18
+* added the following messages: TradeCaptureReportRequest (AD), TradeCaptureReportRequestAck (AQ), and TradeCaptureReport (AE). Clients can now utilize these to subscribe for receiving reports on their own trades.
+
+### Release 1.3.17
+* added fields NoTickRules(1205), StartTickPriceRange(1206), TickIncrement(1208) to the instrument for tick size steps
+* added option DisplayIncrementSteps(9018) to `Logon` and `Security List Request`(`x`) so the client can enable receiving the above mentioned new fields in the instrument
+
+### Release 1.3.16
+* added possibility to search closed orders by ClOrdID or DeribitLabel via OrderMassStatusRequest
+
+### Release 1.3.16
+
+* incremental refresh for indices now has 1 entry instead of 2
+* BTC-DVOL, ETH-DVOL are renamed in compliance with other indices: BTCDVOL_USDC-DERIBIT-INDEX, ETHDVOL_USDC-DERIBIT-INDEX
+
+### Release 1.3.15
+
+* SecurityList (y): added new value FXSPOT of SecurityType for currency exchange spot market.
+* SecurityList (y): added PriceQuoteCurrency (1524)
+
+### Release 1.3.14
+
+* Documentation alignment
+
+### Release 1.3.13
+
+Added combo API:
+
+* added Security Definition Request (c)
+* added Security Definition (d)
+
+Added RFQ API:
+
+* added Quote Request (R)
+* added Quote Request Reject (AG)
+* added Quote Status Report (AI)
+* added RFQ Request (AH)
+
+### Release 1.3.12
+
+* MarketData Request (V) added DeribitShowBlockTradeId (9012)
+* MarketData (W) and (X): added TrdMatchID(880) as blocktrade ID
+
+### Release 1.3.11
+
+* MarketData Request (V): added DeribitSkipBlockTrades (9011)
+
+### Release 1.3.10
+
+* added possibility to use client's ClOrdID and DeribitLabel in Order Cancel Request(F), Order Mass Cancel Request(q) and Order Cancel/Replace Request(G) without exchange generated OrigClOrdID (equivalent of REST/WS cancel_by_label etc)
+
+### Release 1.3.09
+
+* Added Sequence Reset(4)
+* Security List Request(x) added SubscriptionRequestType(263) - possibilty to get notifications about new or terminated instruments
+* SecurityList (y): added SecurityStatus(965) in the notifications
+
+### Release 1.3.08
+
+* Logon(A): Added custom tag ConnectionOnlyExecutionReports(9010)
+
+### Release 1.3.07
+
+* Order Cancel/Replace Request (G): adjusted behavior for MMP orders when DeribitMMProtection (9008) flag is not specified
+
+### Release 1.3.06
+
+* SecurityList (y): added Deribit Volatility Index instruments: BTC-VIX, ETH-VIX
+* MarketData Request (V): added requests for Deribit Volatility Index
+
+### Release 1.3.05
+
+* Added MMProtection Limits (MM)
+* Added MMProtection Limits Result/Reject (MR)
+* Added MMProtection Reset (MZ)
+* New Order Single (D): added nonmandatory DeribitMMProtection (9008)
+* Order Cancel/Replace Request (G): added nonmandatory DeribitMMProtection (9008)
+* Execution Reports (8): added nonmandatory DeribitMMProtection (9008)
+
+### Release 1.3.04
+
+* Logon(A): Added custom tag DeribitSequential(9007)
+* Execution Reports (8): added SecondaryExecID which is ID of the last change of the order
+
+### Release 1.3.03
+
+* Added SecurityStatusRequest(e) request and SecurityStatus(f) response
+
+### Release 1.3.02
+
+* Execution Reports (8): added FillsGrp for non-immediate fills also (before it was only for immediate fills)
+* Position Report (AP): added missing PosType (703) added into PositionQty block
+* Execution Reports (8): added LastQty (32) and LastPx (31)
+
+### Release 1.3.01
+
+* MarketData Request (V): added support for multiple Symbols (NoRelatedSym and followed group of Symbols)
+* MarketData (W) and (X): added custom field DeribitLiquidation (100091)
+
+### Release 1.3.00
+
+* MarketData (W) and (X): added OpenInterest (746)
+* MarketData (W) and (X): added MarkPrice (100090)
+* MarketData (W) and (X): added UnderlyingSymbol(311)
+* MarketData (W) and (X): added UnderlyingPx(810)
+* MarketData (W) and (X): added ContractMultiplier(231)
+* Position Report (AP): added ContractMultiplier(231)
+* Position Report (AP): added UnderlyingEndPrice(883)
+* SecurityList (y): PutOrCall changed for compliance - put = 0, call = 1
+* SecurityList (y): added InstrumentPricePrecision(2576)
+* SecurityList (y): added MinPriceIncrement(969)
+* SecurityList (y): added UnderlyingSymbol(311)
+* SecurityList (y): added MinTradeVol(562)
+* User Request(BE): added parameter Currency(15), default is BTC
+* Order Mass Cancel Request(q): added parameter Currency(15)
+* added notification for StopLimit and StopMarket Orders. StopMarket orders has OrdType=S
+* Execution Report (8): added ContractMultiplier(231)
+* Execution Report (8): added ConditionTriggerMethod(5127)

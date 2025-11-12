@@ -1,0 +1,334 @@
+---
+title: "API Keys"
+description: "Managing API keys for Deribit API access"
+---
+
+# API Keys
+
+API keys provide secure programmatic access to your Deribit account. This guide covers creating, managing, and securing your API keys.
+
+## Creating an API Key
+
+### Step-by-Step Guide
+
+1. **Log in** to your Deribit account
+2. Navigate to **Account** → **API**
+3. Click **Create new key**
+4. Configure the following settings:
+   - **Name**: Descriptive name for the key
+   - **Permissions**: Select required scopes
+   - **IP Whitelist**: (Optional) Restrict to specific IPs
+   - **Max Scope**: Maximum permission level
+5. Click **Create**
+6. **Save your credentials** immediately:
+   - Client ID
+   - Client Secret
+
+<Warning>
+The client secret is only shown once. Store it securely - you cannot retrieve it later.
+</Warning>
+
+## API Key Permissions
+
+### Available Scopes
+
+| Scope | Description | Use Case |
+|-------|-------------|----------|
+| `account:read` | View account information | Monitoring, reporting |
+| `account:read_write` | Modify account settings | Account management tools |
+| `trade:read` | View orders and positions | Portfolio tracking |
+| `trade:write` | Place and cancel orders | Trading bots, algorithms |
+| `wallet:read` | View wallet balances | Balance monitoring |
+| `wallet:write` | Deposits and withdrawals | Automated treasury management |
+| `block_trade:read` | View block trades | Block trade monitoring |
+| `block_trade:write` | Execute block trades | Institutional trading |
+
+### Recommended Permission Sets
+
+**Read-Only Bot**
+```
+✓ account:read
+✓ trade:read
+✓ wallet:read
+```
+
+**Trading Bot**
+```
+✓ account:read
+✓ trade:read
+✓ trade:write
+```
+
+**Full Access**
+```
+✓ account:read_write
+✓ trade:read
+✓ trade:write
+✓ wallet:read
+✓ wallet:write
+```
+
+<Info>
+Always use the principle of least privilege - grant only the permissions your application needs.
+</Info>
+
+## IP Whitelisting
+
+### Why Use IP Whitelisting?
+
+IP whitelisting adds an extra security layer by restricting API key usage to specific IP addresses.
+
+### Configuration
+
+1. Edit your API key
+2. Enter allowed IP addresses (one per line)
+3. Supports both IPv4 and IPv6
+4. Use CIDR notation for ranges
+
+**Example**:
+```
+192.168.1.100
+10.0.0.0/24
+2001:db8::1
+```
+
+### Best Practices
+
+- Whitelist only static IPs
+- Use VPN or proxy for dynamic IPs
+- Update whitelist when infrastructure changes
+- Test thoroughly after adding restrictions
+
+## Managing API Keys
+
+### Viewing Active Keys
+
+View all your API keys in the Account → API section:
+- Key name
+- Client ID
+- Creation date
+- Last used
+- Permissions
+- Status (enabled/disabled)
+
+### Editing Keys
+
+You can modify:
+- Key name
+- Permissions (can only reduce, not increase)
+- IP whitelist
+- Enabled/disabled status
+
+<Warning>
+You cannot change the client secret. To get a new secret, create a new API key.
+</Warning>
+
+### Revoking Keys
+
+To revoke an API key:
+1. Navigate to Account → API
+2. Find the key to revoke
+3. Click **Delete** or **Disable**
+4. Confirm the action
+
+**Disable vs Delete**:
+- **Disable**: Temporarily deactivate (can re-enable)
+- **Delete**: Permanently remove (cannot undo)
+
+## Security Best Practices
+
+### 1. Secure Storage
+
+**Environment Variables** (Recommended)
+```bash
+export DERIBIT_CLIENT_ID="your_client_id"
+export DERIBIT_CLIENT_SECRET="your_client_secret"
+```
+
+```javascript
+const clientId = process.env.DERIBIT_CLIENT_ID;
+const clientSecret = process.env.DERIBIT_CLIENT_SECRET;
+```
+
+**Secrets Management**
+- AWS Secrets Manager
+- HashiCorp Vault
+- Azure Key Vault
+- Google Secret Manager
+
+### 2. Never Commit Credentials
+
+Add to `.gitignore`:
+```
+.env
+.env.local
+config/secrets.json
+credentials.txt
+```
+
+### 3. Separate Keys by Environment
+
+Use different API keys for:
+- Development (test.deribit.com)
+- Staging
+- Production (www.deribit.com)
+
+### 4. Regular Rotation
+
+- Rotate keys every 90 days
+- Rotate immediately if compromised
+- Rotate when team members leave
+
+### 5. Monitor Usage
+
+Check API key activity regularly:
+- Unusual request patterns
+- Unexpected IP addresses
+- Failed authentication attempts
+- High request volumes
+
+## Rate Limits per Key
+
+Each API key has rate limits:
+
+| Category | Limit |
+|----------|-------|
+| Matching engine requests | 10/second |
+| Non-matching requests | 20/second |
+| WebSocket messages | 50/second |
+| Subscriptions | 100 channels |
+
+<Warning>
+Exceeding rate limits results in temporary bans (1-30 minutes).
+</Warning>
+
+## Testing API Keys
+
+### Test Environment
+
+Always test new keys on the test environment first:
+
+```bash
+# Test environment
+curl -X GET "https://test.deribit.com/api/v2/public/auth" \
+  -d "grant_type=client_credentials" \
+  -d "client_id=YOUR_TEST_CLIENT_ID" \
+  -d "client_secret=YOUR_TEST_CLIENT_SECRET"
+```
+
+### Verify Permissions
+
+Test each permission scope:
+
+```bash
+# Test read permission
+curl -X GET "https://test.deribit.com/api/v2/private/get_account_summary?currency=BTC" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+
+# Test write permission
+curl -X GET "https://test.deribit.com/api/v2/private/buy" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -d "instrument_name=BTC-PERPETUAL" \
+  -d "amount=10" \
+  -d "type=limit" \
+  -d "price=50000"
+```
+
+## Troubleshooting
+
+### Authentication Failed
+
+**Possible causes**:
+- Incorrect client ID or secret
+- Key is disabled
+- IP not whitelisted
+- Key has been revoked
+
+**Solution**:
+1. Verify credentials
+2. Check key status in dashboard
+3. Verify IP address
+4. Create new key if necessary
+
+### Permission Denied
+
+**Possible causes**:
+- Insufficient permissions
+- Scope not granted to key
+- Method requires higher permission level
+
+**Solution**:
+1. Check required scope for the method
+2. Verify key permissions
+3. Create new key with correct permissions
+
+### Rate Limit Exceeded
+
+**Possible causes**:
+- Too many requests
+- Burst traffic
+- Multiple applications using same key
+
+**Solution**:
+1. Implement rate limiting in your code
+2. Use exponential backoff
+3. Create separate keys for different applications
+
+## Example: Key Management Class
+
+```javascript
+class DeribitKeyManager {
+  constructor() {
+    this.keys = new Map();
+  }
+
+  addKey(name, clientId, clientSecret, environment = 'production') {
+    this.keys.set(name, {
+      clientId,
+      clientSecret,
+      environment,
+      baseUrl: environment === 'production' 
+        ? 'https://www.deribit.com/api/v2'
+        : 'https://test.deribit.com/api/v2'
+    });
+  }
+
+  getKey(name) {
+    return this.keys.get(name);
+  }
+
+  async authenticate(keyName) {
+    const key = this.getKey(keyName);
+    if (!key) throw new Error(`Key ${keyName} not found`);
+
+    const response = await fetch(`${key.baseUrl}/public/auth`, {
+      method: 'GET',
+      params: {
+        grant_type: 'client_credentials',
+        client_id: key.clientId,
+        client_secret: key.clientSecret
+      }
+    });
+
+    return response.data.result.access_token;
+  }
+}
+
+// Usage
+const keyManager = new DeribitKeyManager();
+keyManager.addKey('trading', 'client_id', 'client_secret', 'production');
+keyManager.addKey('test', 'test_client_id', 'test_client_secret', 'test');
+
+const token = await keyManager.authenticate('trading');
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="OAuth Flow" icon="shield" href="/oauth">
+    Learn about OAuth 2.0 implementation
+  </Card>
+  <Card title="API Reference" icon="book" href="/api-reference/introduction">
+    Explore API documentation
+  </Card>
+</CardGroup>

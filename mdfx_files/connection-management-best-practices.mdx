@@ -1,0 +1,318 @@
+---
+title: "Connection Management Best Practices"
+description: "Best practices for managing API connections to Deribit, including WebSocket and REST connection handling"
+---
+
+# Connection Management Best Practices
+
+Effective connection management is crucial for building reliable and performant applications that interact with the Deribit API. This guide covers best practices for managing both WebSocket and REST connections.
+
+## Overview
+
+Proper connection management helps ensure:
+- **Reliability** - Stable connections that recover from failures
+- **Performance** - Efficient resource usage and reduced latency
+- **Scalability** - Applications that can handle increased load
+- **Security** - Secure authentication and token management
+
+## WebSocket Connection Management
+
+### Connection Lifecycle
+
+WebSocket connections should be managed with a clear lifecycle:
+
+1. **Establish Connection** - Create connection with proper error handling
+2. **Authenticate** - Authenticate using OAuth tokens
+3. **Subscribe** - Subscribe to required channels
+4. **Monitor** - Monitor connection health
+5. **Reconnect** - Handle reconnections gracefully
+6. **Cleanup** - Properly close connections when done
+
+### Connection Pooling
+
+For applications requiring multiple connections:
+
+- **Limit Connections** - Don't create more connections than necessary
+- **Reuse Connections** - Reuse existing connections when possible
+- **Connection Limits** - Be aware of rate limits and connection limits per account
+
+### Heartbeat Management
+
+Implement proper heartbeat handling:
+
+```javascript
+// Example: WebSocket heartbeat
+let heartbeatInterval;
+
+function setupHeartbeat(ws) {
+  heartbeatInterval = setInterval(() => {
+    if (ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({
+        jsonrpc: "2.0",
+        method: "public/set_heartbeat",
+        params: {
+          interval: 30
+        },
+        id: Date.now()
+      }));
+    }
+  }, 30000); // 30 seconds
+}
+```
+
+### Reconnection Strategy
+
+Implement exponential backoff for reconnections:
+
+```javascript
+let reconnectDelay = 1000; // Start with 1 second
+const maxDelay = 60000; // Max 60 seconds
+
+function reconnect() {
+  setTimeout(() => {
+    connect();
+    reconnectDelay = Math.min(reconnectDelay * 2, maxDelay);
+  }, reconnectDelay);
+}
+```
+
+### Error Handling
+
+Handle connection errors gracefully:
+
+- **Network Errors** - Implement retry logic for network failures
+- **Authentication Errors** - Refresh tokens when authentication fails
+- **Rate Limiting** - Respect rate limits and implement backoff
+- **Server Errors** - Handle 5xx errors with retries
+
+## REST Connection Management
+
+### Connection Reuse
+
+For REST APIs, use HTTP connection pooling:
+
+- **Keep-Alive** - Enable HTTP keep-alive to reuse connections
+- **Connection Pool** - Use connection pooling libraries
+- **Timeout Configuration** - Set appropriate timeouts
+
+### Request Management
+
+Manage REST requests effectively:
+
+- **Batch Requests** - Combine multiple requests when possible
+- **Rate Limiting** - Implement client-side rate limiting
+- **Retry Logic** - Implement exponential backoff for retries
+- **Request Timeouts** - Set appropriate timeouts for requests
+
+### Example: REST Client with Connection Pooling
+
+```python
+import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
+
+session = requests.Session()
+
+# Configure retry strategy
+retry_strategy = Retry(
+    total=3,
+    backoff_factor=1,
+    status_forcelist=[429, 500, 502, 503, 504],
+)
+
+adapter = HTTPAdapter(
+    max_retries=retry_strategy,
+    pool_connections=10,
+    pool_maxsize=20
+)
+
+session.mount("https://", adapter)
+```
+
+## Authentication Management
+
+### Token Management
+
+Properly manage OAuth tokens:
+
+- **Token Storage** - Store tokens securely (never in code)
+- **Token Refresh** - Implement automatic token refresh
+- **Token Expiration** - Handle token expiration gracefully
+- **Scope Management** - Request only necessary scopes
+
+### Token Refresh Pattern
+
+```javascript
+async function getValidToken() {
+  if (token && !isTokenExpired(token)) {
+    return token;
+  }
+  
+  // Refresh token
+  const response = await fetch('/public/auth', {
+    method: 'GET',
+    params: {
+      grant_type: 'refresh_token',
+      refresh_token: refreshToken
+    }
+  });
+  
+  const data = await response.json();
+  token = data.result.access_token;
+  refreshToken = data.result.refresh_token;
+  
+  return token;
+}
+```
+
+## Error Handling and Recovery
+
+### Error Categories
+
+Categorize errors for appropriate handling:
+
+- **Transient Errors** - Network issues, timeouts (retry)
+- **Authentication Errors** - Token issues (refresh and retry)
+- **Rate Limit Errors** - Too many requests (backoff)
+- **Client Errors** - Invalid requests (don't retry)
+- **Server Errors** - Server issues (retry with backoff)
+
+### Retry Strategy
+
+Implement intelligent retry logic:
+
+```python
+import time
+import random
+
+def retry_with_backoff(func, max_retries=5, base_delay=1):
+    for attempt in range(max_retries):
+        try:
+            return func()
+        except TransientError as e:
+            if attempt == max_retries - 1:
+                raise
+            
+            # Exponential backoff with jitter
+            delay = base_delay * (2 ** attempt) + random.uniform(0, 1)
+            time.sleep(delay)
+    
+    raise Exception("Max retries exceeded")
+```
+
+## Monitoring and Logging
+
+### Connection Monitoring
+
+Monitor connection health:
+
+- **Connection Status** - Track connection state
+- **Latency Metrics** - Monitor request/response times
+- **Error Rates** - Track error rates by type
+- **Throughput** - Monitor messages per second
+
+### Logging Best Practices
+
+Log important connection events:
+
+```javascript
+logger.info('WebSocket connected', { 
+  timestamp: Date.now(),
+  connectionId: connectionId 
+});
+
+logger.warn('Connection lost', { 
+  timestamp: Date.now(),
+  reason: error.message 
+});
+
+logger.error('Reconnection failed', { 
+  timestamp: Date.now(),
+  attempt: retryCount,
+  error: error.message 
+});
+```
+
+## Performance Optimization
+
+### Connection Optimization
+
+Optimize connection performance:
+
+- **Compression** - Enable compression when available
+- **Message Batching** - Batch multiple messages when possible
+- **Subscription Management** - Only subscribe to needed channels
+- **Connection Limits** - Respect connection limits
+
+### Resource Management
+
+Manage resources efficiently:
+
+- **Connection Cleanup** - Close unused connections
+- **Memory Management** - Avoid memory leaks in long-running connections
+- **CPU Usage** - Optimize message processing
+- **Network Usage** - Minimize unnecessary network traffic
+
+## Security Best Practices
+
+### Secure Connections
+
+Ensure secure connections:
+
+- **TLS/SSL** - Always use encrypted connections (WSS/HTTPS)
+- **Certificate Validation** - Validate SSL certificates
+- **Token Security** - Never expose tokens in logs or URLs
+- **Credential Management** - Use secure credential storage
+
+### Access Control
+
+Implement proper access control:
+
+- **Scope Limitation** - Request minimum necessary scopes
+- **IP Whitelisting** - Use IP whitelisting when available
+- **Rate Limiting** - Implement client-side rate limiting
+- **Audit Logging** - Log security-relevant events
+
+## Common Pitfalls
+
+### Avoid These Mistakes
+
+1. **Not Handling Disconnections** - Always implement reconnection logic
+2. **Token Leakage** - Never log or expose tokens
+3. **Ignoring Rate Limits** - Always respect rate limits
+4. **Connection Leaks** - Always close connections properly
+5. **No Error Handling** - Implement comprehensive error handling
+6. **Synchronous Blocking** - Use asynchronous patterns for I/O
+7. **No Monitoring** - Implement connection monitoring
+
+## Testing Connection Management
+
+### Test Scenarios
+
+Test your connection management:
+
+- **Connection Loss** - Simulate network failures
+- **Token Expiration** - Test token refresh logic
+- **Rate Limiting** - Test rate limit handling
+- **Reconnection** - Test reconnection scenarios
+- **Load Testing** - Test under high load
+
+## Summary
+
+Effective connection management requires:
+
+- ✅ Proper connection lifecycle management
+- ✅ Robust error handling and recovery
+- ✅ Secure authentication and token management
+- ✅ Performance optimization
+- ✅ Comprehensive monitoring and logging
+- ✅ Testing and validation
+
+By following these best practices, you can build reliable, performant, and secure applications that interact with the Deribit API.
+
+## Related Resources
+
+- [API Authentication Guide](/api-keys)
+- [WebSocket API Documentation](/subscription-channels)
+- [Error Handling Guide](/errors)
+- [Rate Limiting Information](/overview)

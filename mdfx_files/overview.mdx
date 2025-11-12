@@ -1,0 +1,490 @@
+---
+title: "JSON-RPC Overview"
+description: "Understanding the JSON-RPC 2.0 protocol used by Deribit API"
+---
+
+# JSON-RPC 2.0 Protocol
+
+Deribit API uses JSON-RPC 2.0 for all API communications. This standardized protocol provides a simple and consistent way to make remote procedure calls.
+
+## What is JSON-RPC?
+
+JSON-RPC is a stateless, light-weight remote procedure call (RPC) protocol that uses JSON for data encoding.
+
+**Key features**:
+- Simple request/response model
+- Support for batch requests
+- Standardized error handling
+- Transport-agnostic (HTTP, WebSocket, etc.)
+
+## Request Format
+
+### Basic Structure
+
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "method_name",
+  "params": {
+    "param1": "value1",
+    "param2": "value2"
+  },
+  "id": 1
+}
+```
+
+### Required Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `jsonrpc` | string | Must be exactly `"2.0"` |
+| `method` | string | Name of the method to call |
+| `id` | number/string | Request identifier (for matching responses) |
+
+### Optional Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `params` | object/array | Method parameters |
+
+## Response Format
+
+### Success Response
+
+```json
+{
+  "jsonrpc": "2.0",
+  "result": {
+    "data": "response data"
+  },
+  "usIn": 1704153600000000,
+  "usOut": 1704153600001000,
+  "usDiff": 1000,
+  "id": 1
+}
+```
+
+### Error Response
+
+```json
+{
+  "jsonrpc": "2.0",
+  "error": {
+    "code": 13009,
+    "message": "invalid_token",
+    "data": {
+      "reason": "token has expired"
+    }
+  },
+  "usIn": 1704153600000000,
+  "usOut": 1704153600001000,
+  "usDiff": 1000,
+  "id": 1
+}
+```
+
+### Response Fields
+
+| Field | Description |
+|-------|-------------|
+| `result` | Method return value (on success) |
+| `error` | Error object (on failure) |
+| `usIn` | Server timestamp when request received (microseconds) |
+| `usOut` | Server timestamp when response sent (microseconds) |
+| `usDiff` | Processing time in microseconds |
+| `id` | Matches the request ID |
+
+## Transport Protocols
+
+### HTTP REST
+
+**Endpoint**: `https://www.deribit.com/api/v2/{method}`
+
+**Example**:
+```bash
+curl -X GET "https://www.deribit.com/api/v2/public/get_time"
+```
+
+**Response**:
+```json
+{
+  "jsonrpc": "2.0",
+  "result": 1704153600000,
+  "usIn": 1704153600000000,
+  "usOut": 1704153600001000,
+  "usDiff": 1000
+}
+```
+
+### WebSocket
+
+**Endpoint**: `wss://www.deribit.com/ws/api/v2`
+
+**Example**:
+```javascript
+const ws = new WebSocket('wss://www.deribit.com/ws/api/v2');
+
+ws.onopen = () => {
+  ws.send(JSON.stringify({
+    "jsonrpc": "2.0",
+    "method": "public/get_time",
+    "id": 1
+  }));
+};
+
+ws.onmessage = (event) => {
+  const response = JSON.parse(event.data);
+  console.log(response.result);
+};
+```
+
+## Method Naming Convention
+
+Methods follow a consistent naming pattern:
+
+```
+{visibility}/{action}_{resource}
+```
+
+**Examples**:
+- `public/get_instruments` - Public method to get instruments
+- `private/buy` - Private method to place buy order
+- `private/get_account_summary` - Private method to get account info
+
+### Method Categories
+
+| Prefix | Description | Authentication |
+|--------|-------------|----------------|
+| `public/` | Public methods | Not required |
+| `private/` | Private methods | Required |
+| `public/auth` | Authentication | Special case |
+
+## Parameter Formats
+
+### Object Parameters (Recommended)
+
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "private/buy",
+  "params": {
+    "instrument_name": "BTC-PERPETUAL",
+    "amount": 10,
+    "type": "limit",
+    "price": 50000
+  },
+  "id": 1
+}
+```
+
+### Array Parameters (Legacy)
+
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "private/buy",
+  "params": ["BTC-PERPETUAL", 10, "limit", 50000],
+  "id": 1
+}
+```
+
+<Info>
+Use object parameters for better readability and maintainability.
+</Info>
+
+## Batch Requests
+
+Send multiple requests in a single HTTP call:
+
+```json
+[
+  {
+    "jsonrpc": "2.0",
+    "method": "public/get_time",
+    "id": 1
+  },
+  {
+    "jsonrpc": "2.0",
+    "method": "public/get_instruments",
+    "params": {
+      "currency": "BTC"
+    },
+    "id": 2
+  }
+]
+```
+
+**Response**:
+```json
+[
+  {
+    "jsonrpc": "2.0",
+    "result": 1704153600000,
+    "id": 1
+  },
+  {
+    "jsonrpc": "2.0",
+    "result": [
+      {
+        "instrument_name": "BTC-PERPETUAL",
+        "kind": "future"
+      }
+    ],
+    "id": 2
+  }
+]
+```
+
+## Notifications
+
+Notifications are server-initiated messages (no request from client).
+
+**Format**:
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "subscription",
+  "params": {
+    "channel": "book.BTC-PERPETUAL.100ms",
+    "data": {
+      "timestamp": 1704153600000,
+      "instrument_name": "BTC-PERPETUAL",
+      "change_id": 12345,
+      "bids": [[50000, 100]],
+      "asks": [[50100, 150]]
+    }
+  }
+}
+```
+
+<Info>
+Notifications don't have an `id` field since they're not responses to requests.
+</Info>
+
+## Error Handling
+
+### Error Object Structure
+
+```json
+{
+  "code": 13009,
+  "message": "invalid_token",
+  "data": {
+    "reason": "token has expired",
+    "param": "access_token"
+  }
+}
+```
+
+### Common Error Codes
+
+| Code | Message | Description |
+|------|---------|-------------|
+| 10000 | `authorization_required` | Authentication needed |
+| 10001 | `invalid_credentials` | Invalid API key |
+| 10002 | `insufficient_funds` | Not enough balance |
+| 10003 | `invalid_request` | Malformed request |
+| 10004 | `not_found` | Resource not found |
+| 10009 | `invalid_argument` | Invalid parameter value |
+| 13009 | `invalid_token` | Token expired or invalid |
+
+### Handling Errors
+
+```javascript
+async function makeRequest(method, params) {
+  const response = await fetch('https://www.deribit.com/api/v2/' + method, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  });
+
+  const data = await response.json();
+
+  if (data.error) {
+    switch (data.error.code) {
+      case 13009:
+        // Token expired - refresh and retry
+        await refreshToken();
+        return makeRequest(method, params);
+      
+      case 10002:
+        // Insufficient funds
+        throw new Error('Insufficient funds');
+      
+      default:
+        throw new Error(data.error.message);
+    }
+  }
+
+  return data.result;
+}
+```
+
+## Best Practices
+
+### 1. Use Unique Request IDs
+
+```javascript
+let requestId = 1;
+
+function createRequest(method, params) {
+  return {
+    jsonrpc: '2.0',
+    method,
+    params,
+    id: requestId++
+  };
+}
+```
+
+### 2. Handle Timeouts
+
+```javascript
+function requestWithTimeout(ws, request, timeout = 5000) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      reject(new Error('Request timeout'));
+    }, timeout);
+
+    const handler = (data) => {
+      const response = JSON.parse(data);
+      if (response.id === request.id) {
+        clearTimeout(timer);
+        ws.removeListener('message', handler);
+        resolve(response);
+      }
+    };
+
+    ws.on('message', handler);
+    ws.send(JSON.stringify(request));
+  });
+}
+```
+
+### 3. Validate Responses
+
+```javascript
+function validateResponse(response) {
+  if (!response.jsonrpc || response.jsonrpc !== '2.0') {
+    throw new Error('Invalid JSON-RPC version');
+  }
+
+  if (response.error) {
+    throw new Error(`API Error: ${response.error.message}`);
+  }
+
+  if (!response.hasOwnProperty('result')) {
+    throw new Error('Missing result field');
+  }
+
+  return response.result;
+}
+```
+
+### 4. Log Timing Information
+
+```javascript
+function logTiming(response) {
+  const processingTime = response.usDiff / 1000; // Convert to ms
+  console.log(`Request processed in ${processingTime}ms`);
+  
+  if (processingTime > 100) {
+    console.warn('Slow request detected');
+  }
+}
+```
+
+## Complete Example
+
+```javascript
+class DeribitJSONRPC {
+  constructor(baseUrl = 'https://www.deribit.com/api/v2') {
+    this.baseUrl = baseUrl;
+    this.requestId = 1;
+  }
+
+  async call(method, params = {}) {
+    const request = {
+      jsonrpc: '2.0',
+      method,
+      params,
+      id: this.requestId++
+    };
+
+    try {
+      const response = await fetch(`${this.baseUrl}/${method}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const data = await response.json();
+
+      if (data.error) {
+        throw new Error(`${data.error.code}: ${data.error.message}`);
+      }
+
+      // Log timing
+      console.log(`Processing time: ${data.usDiff / 1000}ms`);
+
+      return data.result;
+    } catch (error) {
+      console.error('Request failed:', error);
+      throw error;
+    }
+  }
+
+  async batch(requests) {
+    const batchRequest = requests.map((req, index) => ({
+      jsonrpc: '2.0',
+      method: req.method,
+      params: req.params || {},
+      id: this.requestId + index
+    }));
+
+    this.requestId += requests.length;
+
+    const response = await fetch(`${this.baseUrl}/batch`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(batchRequest)
+    });
+
+    return response.json();
+  }
+}
+
+// Usage
+const rpc = new DeribitJSONRPC();
+
+// Single request
+const time = await rpc.call('public/get_time');
+console.log('Server time:', time);
+
+// Batch request
+const results = await rpc.batch([
+  { method: 'public/get_time' },
+  { method: 'public/get_instruments', params: { currency: 'BTC' } }
+]);
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Request Format" icon="file-code" href="/request-format">
+    Detailed request format specification
+  </Card>
+  <Card title="Response Format" icon="file-check" href="/response-format">
+    Detailed response format specification
+  </Card>
+  <Card title="Error Handling" icon="triangle-exclamation" href="/errors">
+    Complete error code reference
+  </Card>
+  <Card title="API Reference" icon="book" href="/api-reference/introduction">
+    Browse all API methods
+  </Card>
+</CardGroup>

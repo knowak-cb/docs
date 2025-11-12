@@ -1,0 +1,4625 @@
+{
+  "asyncapi": "3.0.0",
+  "id": "https://deribit.com/api/v2/subscriptions",
+  "info": {
+    "title": "Deribit Subscriptions",
+    "version": "1.0.0",
+    "description": "AsyncAPI specification for Deribit subscriptions",
+    "contact": {
+      "name": "Deribit API Support",
+      "url": "https://docs.deribit.com"
+    }
+  },
+  "servers": {
+    "production": {
+      "host": "deribit.com/ws/api/v2",
+      "protocol": "wss",
+      "description": "Deribit WebSocket API"
+    },
+    "testnet": {
+      "host": "test.deribit.com/ws/api/v2",
+      "protocol": "wss",
+      "description": "Deribit Testnet WebSocket API"
+    }
+  },
+  "defaultContentType": "application/json",
+  "channels": {
+    "platform_state": {
+      "address": "platform_state",
+      "title": "platform_state ",
+      "summary": "Information about platform state.",
+      "description": "",
+      "parameters": {},
+      "messages": {
+        "subscribe_request": {
+          "name": "subscribe_request",
+          "title": "Subscription Request",
+          "summary": "Client sends subscription request to subscribe to notification channel. Please refer to [Subscriptions page](/api-reference/subscription-management/public-subscribe) for more information.",
+          "description": "Request to subscribe to platform_state channel. This channel does not require any additional parameters.",
+          "payload": {
+            "properties": {},
+            "additionalProperties": false
+          },
+          "examples": [
+            {
+              "name": "subscribe_request_example",
+              "summary": "Subscription request example",
+              "payload": {
+                "jsonrpc": "2.0",
+                "method": "public/subscribe",
+                "id": 42,
+                "params": {
+                  "channels": [
+                    "platform_state"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "subscription_message": {
+          "name": "platform_state_subscription_notification_data",
+          "title": "Subscription Notification Data",
+          "summary": "Server sends subscription notification data",
+          "description": "Message schema for platform_state subscription - contains only the data payload",
+          "payload": {
+            "type": "object",
+            "description": "The actual notification data",
+            "additionalProperties": true
+          },
+          "examples": [
+            {
+              "name": "repeated",
+              "summary": "Repeated notification example",
+              "payload": {
+                "price_index": "sol_usdc",
+                "locked": true
+              }
+            }
+          ]
+        }
+      },
+      "tags": [
+        {
+          "name": "platform"
+        }
+      ]
+    },
+    "platform_state.public_methods_state": {
+      "address": "platform_state.public_methods_state",
+      "title": "platform_state.public_methods_state ",
+      "summary": "Information whether unauthorized public requests are allowed",
+      "description": "",
+      "parameters": {},
+      "messages": {
+        "subscribe_request": {
+          "name": "subscribe_request",
+          "title": "Subscription Request",
+          "summary": "Client sends subscription request to subscribe to notification channel. Please refer to [Subscriptions page](/api-reference/subscription-management/public-subscribe) for more information.",
+          "description": "Request to subscribe to platform_state.public_methods_state channel. This channel does not require any additional parameters.",
+          "payload": {
+            "properties": {},
+            "additionalProperties": false
+          },
+          "examples": [
+            {
+              "name": "subscribe_request_example",
+              "summary": "Subscription request example",
+              "payload": {
+                "jsonrpc": "2.0",
+                "method": "public/subscribe",
+                "id": 42,
+                "params": {
+                  "channels": [
+                    "platform_state.public_methods_state"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "subscription_message": {
+          "name": "platform_state_subscription_notification_data",
+          "title": "Subscription Notification Data",
+          "summary": "Server sends subscription notification data",
+          "description": "Message schema for platform_state.public_methods_state subscription - contains only the data payload",
+          "payload": {
+            "type": "object",
+            "description": "The actual notification data",
+            "additionalProperties": true
+          },
+          "examples": [
+            {
+              "name": "repeated",
+              "summary": "Repeated notification example",
+              "payload": {
+                "allow_unauthenticated_public_requests": true
+              }
+            }
+          ]
+        }
+      },
+      "tags": [
+        {
+          "name": "platform"
+        }
+      ]
+    },
+    "announcements": {
+      "address": "announcements",
+      "title": "announcements ",
+      "summary": "General announcements concerning the Deribit platform.",
+      "description": "",
+      "parameters": {},
+      "messages": {
+        "subscribe_request": {
+          "name": "subscribe_request",
+          "title": "Subscription Request",
+          "summary": "Client sends subscription request to subscribe to notification channel. Please refer to [Subscriptions page](/api-reference/subscription-management/public-subscribe) for more information.",
+          "description": "Request to subscribe to announcements channel. This channel does not require any additional parameters.",
+          "payload": {
+            "properties": {},
+            "additionalProperties": false
+          },
+          "examples": [
+            {
+              "name": "subscribe_request_example",
+              "summary": "Subscription request example",
+              "payload": {
+                "jsonrpc": "2.0",
+                "method": "public/subscribe",
+                "id": 42,
+                "params": {
+                  "channels": [
+                    "announcements"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "subscription_message": {
+          "name": "announcements_subscription_notification_data",
+          "title": "Subscription Notification Data",
+          "summary": "Server sends subscription notification data",
+          "description": "Message schema for announcements subscription - contains only the data payload",
+          "payload": {
+            "type": "object",
+            "description": "The actual notification data",
+            "additionalProperties": true
+          }
+        }
+      },
+      "tags": [
+        {
+          "name": "announcements"
+        }
+      ]
+    },
+    "book.(instrument_name).(interval)": {
+      "address": "book.(instrument_name).(interval)",
+      "title": "book.(instrument_name).(interval) ",
+      "summary": "Notifies about changes to the order book for a certain instrument.",
+      "description": "Notifies about changes to the order book for a certain instrument.\n\nThe first notification will contain the whole book (bid and ask amounts for all prices). After that there will only be information about changes to individual price levels.\n\nThe first notification will contain the amounts for all price levels (list of `['new', price, amount]` tuples). All following notifications will contain a list of tuples with action, price level and new amount (`[action, price, amount]`). Action can be either `new`, `change` or `delete`.\n\nEach notification will contain a `change_id` field, and each message except for the first one will contain a field `prev_change_id`. If `prev_change_id` is equal to the `change_id` of the previous message, this means that no messages have been missed.\n\nThe amount for perpetual and futures is in USD units, for options it is in corresponding cryptocurrency contracts, e.g., BTC or ETH.",
+      "parameters": {
+        "instrument_name": {
+          "description": "The name of the instrument",
+          "examples": [
+            "BTC-PERPETUAL",
+            "ETH-PERPETUAL"
+          ]
+        },
+        "interval": {
+          "description": "Frequency of notifications",
+          "enum": [
+            "raw",
+            "100ms",
+            "agg2"
+          ],
+          "examples": [
+            "100ms",
+            "raw"
+          ]
+        }
+      },
+      "messages": {
+        "subscribe_request": {
+          "name": "subscribe_request",
+          "title": "Subscription Request",
+          "summary": "Client sends subscription request to subscribe to notification channel. Please refer to [Subscriptions page](/api-reference/subscription-management/public-subscribe) for more information.",
+          "description": "Request to subscribe to book channel. Channel name format: book.(instrument_name).(interval)",
+          "payload": {
+            "properties": {},
+            "additionalProperties": false
+          },
+          "examples": [
+            {
+              "name": "subscribe_request_example",
+              "summary": "Subscription request example",
+              "payload": {
+                "jsonrpc": "2.0",
+                "method": "public/subscribe",
+                "id": 42,
+                "params": {
+                  "channels": [
+                    "book.BTC-PERPETUAL.100ms"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "subscription_message": {
+          "name": "book_subscription_notification_data",
+          "title": "Subscription Notification Data",
+          "summary": "Server sends subscription notification data",
+          "description": "Message schema for book.(instrument_name).(interval) subscription - contains only the data payload",
+          "payload": {
+            "type": "object",
+            "description": "The actual notification data",
+            "additionalProperties": true
+          },
+          "examples": [
+            {
+              "name": "first",
+              "summary": "First notification example",
+              "payload": {
+                "type": "snapshot",
+                "timestamp": 1554373962454,
+                "instrument_name": "BTC-PERPETUAL",
+                "change_id": 297217,
+                "bids": [
+                  [
+                    "new",
+                    5042.34,
+                    30
+                  ],
+                  [
+                    "new",
+                    5041.94,
+                    20
+                  ]
+                ],
+                "asks": [
+                  [
+                    "new",
+                    5042.64,
+                    40
+                  ],
+                  [
+                    "new",
+                    5043.3,
+                    40
+                  ]
+                ]
+              }
+            },
+            {
+              "name": "repeated",
+              "summary": "Repeated notification example",
+              "payload": {
+                "type": "change",
+                "timestamp": 1554373911330,
+                "prev_change_id": 297217,
+                "instrument_name": "BTC-PERPETUAL",
+                "change_id": 297218,
+                "bids": [
+                  [
+                    "delete",
+                    5041.94,
+                    0
+                  ],
+                  [
+                    "delete",
+                    5042.34,
+                    0
+                  ]
+                ],
+                "asks": []
+              }
+            }
+          ]
+        }
+      },
+      "tags": [
+        {
+          "name": "orderbook"
+        }
+      ]
+    },
+    "book.(instrument_name).(group).(depth).(interval)": {
+      "address": "book.(instrument_name).(group).(depth).(interval)",
+      "title": "book.(instrument_name).(group).(depth).(interval) ",
+      "summary": "Aggregated notifications about changes to the order book for a certain instrument.",
+      "description": "Notifies about changes to the order book for a certain instrument.\n\nNotifications are sent once per specified interval, with prices grouped by (rounded to) the specified group, showing the complete order book to the specified depth (number of price levels).\n\nThe 'asks' and the 'bids' elements in the response are both a 'list of lists'. Each element in the outer list is a list of exactly two elements: price and amount.\n\n*price* is a price level (USD per BTC, rounded as specified by the 'group' parameter for the subscription).\n\n*amount* indicates the amount of all orders at price level. For perpetual and inverse futures the amount is in USD units. For options and linear futures and it is the underlying base currency coin.",
+      "parameters": {
+        "instrument_name": {
+          "description": "The name of the instrument",
+          "examples": [
+            "BTC-PERPETUAL",
+            "ETH-PERPETUAL"
+          ]
+        },
+        "group": {
+          "description": "Group prices (by rounding)",
+          "enum": [
+            "none",
+            "1",
+            "2",
+            "5",
+            "10",
+            "25",
+            "100",
+            "250"
+          ],
+          "examples": [
+            "10",
+            "none"
+          ]
+        },
+        "depth": {
+          "description": "Number of price levels",
+          "enum": [
+            "1",
+            "10",
+            "20"
+          ],
+          "examples": [
+            "10",
+            "20"
+          ]
+        },
+        "interval": {
+          "description": "Frequency of notifications",
+          "enum": [
+            "raw",
+            "100ms",
+            "agg2"
+          ],
+          "examples": [
+            "100ms",
+            "raw"
+          ]
+        }
+      },
+      "messages": {
+        "subscribe_request": {
+          "name": "subscribe_request",
+          "title": "Subscription Request",
+          "summary": "Client sends subscription request to subscribe to notification channel. Please refer to [Subscriptions page](/api-reference/subscription-management/public-subscribe) for more information.",
+          "description": "Request to subscribe to book channel. Channel name format: book.(instrument_name).(group).(depth).(interval)",
+          "payload": {
+            "properties": {},
+            "additionalProperties": false
+          },
+          "examples": [
+            {
+              "name": "subscribe_request_example",
+              "summary": "Subscription request example",
+              "payload": {
+                "jsonrpc": "2.0",
+                "method": "public/subscribe",
+                "id": 42,
+                "params": {
+                  "channels": [
+                    "book.BTC-PERPETUAL.(group).(depth).100ms"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "subscription_message": {
+          "name": "book_subscription_notification_data",
+          "title": "Subscription Notification Data",
+          "summary": "Server sends subscription notification data",
+          "description": "Message schema for book.(instrument_name).(group).(depth).(interval) subscription - contains only the data payload",
+          "payload": {
+            "type": "object",
+            "description": "The actual notification data",
+            "additionalProperties": true
+          },
+          "examples": [
+            {
+              "name": "repeated",
+              "summary": "Repeated notification example",
+              "payload": {
+                "timestamp": 1554375447971,
+                "instrument_name": "ETH-PERPETUAL",
+                "change_id": 109615,
+                "bids": [
+                  [
+                    160,
+                    40
+                  ]
+                ],
+                "asks": [
+                  [
+                    161,
+                    20
+                  ]
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "tags": [
+        {
+          "name": "orderbook"
+        }
+      ]
+    },
+    "ticker.(instrument_name).(interval)": {
+      "address": "ticker.(instrument_name).(interval)",
+      "title": "ticker.(instrument_name).(interval) ",
+      "summary": "Key information about the instrument",
+      "description": "",
+      "parameters": {
+        "instrument_name": {
+          "description": "The name of the instrument",
+          "examples": [
+            "BTC-PERPETUAL",
+            "ETH-PERPETUAL"
+          ]
+        },
+        "interval": {
+          "description": "Frequency of notifications",
+          "enum": [
+            "raw",
+            "100ms",
+            "agg2"
+          ],
+          "examples": [
+            "100ms",
+            "raw"
+          ]
+        }
+      },
+      "messages": {
+        "subscribe_request": {
+          "name": "subscribe_request",
+          "title": "Subscription Request",
+          "summary": "Client sends subscription request to subscribe to notification channel. Please refer to [Subscriptions page](/api-reference/subscription-management/public-subscribe) for more information.",
+          "description": "Request to subscribe to ticker channel. Channel name format: ticker.(instrument_name).(interval)",
+          "payload": {
+            "properties": {},
+            "additionalProperties": false
+          },
+          "examples": [
+            {
+              "name": "subscribe_request_example",
+              "summary": "Subscription request example",
+              "payload": {
+                "jsonrpc": "2.0",
+                "method": "public/subscribe",
+                "id": 42,
+                "params": {
+                  "channels": [
+                    "ticker.BTC-PERPETUAL.100ms"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "subscription_message": {
+          "name": "ticker_subscription_notification_data",
+          "title": "Subscription Notification Data",
+          "summary": "Server sends subscription notification data",
+          "description": "Message schema for ticker.(instrument_name).(interval) subscription - contains only the data payload",
+          "payload": {
+            "type": "object",
+            "description": "The actual notification data",
+            "additionalProperties": true
+          },
+          "examples": [
+            {
+              "name": "repeated",
+              "summary": "Repeated notification example",
+              "payload": {
+                "best_ask_amount": 100,
+                "best_ask_price": 36443,
+                "best_bid_amount": 5000,
+                "best_bid_price": 36442.5,
+                "current_funding": 0,
+                "estimated_delivery_price": 36441.64,
+                "funding_8h": 2.11e-05,
+                "index_price": 36441.64,
+                "instrument_name": "BTC-PERPETUAL",
+                "interest_value": 1.7362511643080387,
+                "last_price": 36457.5,
+                "mark_price": 36446.51,
+                "max_price": 36991.72,
+                "min_price": 35898.37,
+                "open_interest": 502097590,
+                "settlement_price": 36169.49,
+                "state": "open",
+                "stats": {
+                  "high": 36824.5,
+                  "low": 35213.5,
+                  "price_change": 0.7229,
+                  "volume": 7871.02139035,
+                  "volume_usd": 284061480
+                },
+                "timestamp": 1623060194301
+              }
+            }
+          ]
+        }
+      },
+      "tags": [
+        {
+          "name": "market-data"
+        }
+      ]
+    },
+    "incremental_ticker.(instrument_name)": {
+      "address": "incremental_ticker.(instrument_name)",
+      "title": "incremental_ticker.(instrument_name) ",
+      "summary": "<p>Notifies about changes in instrument ticker (key information about the instrument).</p> <p>The first notification will contain the whole ticker. After that there will only be information about changes in the ticker.</p> <p>This event is sent at most once per second.</p>",
+      "description": "",
+      "parameters": {
+        "instrument_name": {
+          "description": "The name of the instrument",
+          "examples": [
+            "BTC-PERPETUAL",
+            "ETH-PERPETUAL"
+          ]
+        }
+      },
+      "messages": {
+        "subscribe_request": {
+          "name": "subscribe_request",
+          "title": "Subscription Request",
+          "summary": "Client sends subscription request to subscribe to notification channel. Please refer to [Subscriptions page](/api-reference/subscription-management/public-subscribe) for more information.",
+          "description": "Request to subscribe to incremental_ticker channel. Channel name format: incremental_ticker.(instrument_name)",
+          "payload": {
+            "properties": {},
+            "additionalProperties": false
+          },
+          "examples": [
+            {
+              "name": "subscribe_request_example",
+              "summary": "Subscription request example",
+              "payload": {
+                "jsonrpc": "2.0",
+                "method": "public/subscribe",
+                "id": 42,
+                "params": {
+                  "channels": [
+                    "incremental_ticker.BTC-PERPETUAL"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "subscription_message": {
+          "name": "incremental_ticker_subscription_notification_data",
+          "title": "Subscription Notification Data",
+          "summary": "Server sends subscription notification data",
+          "description": "Message schema for incremental_ticker.(instrument_name) subscription - contains only the data payload",
+          "payload": {
+            "type": "object",
+            "description": "The actual notification data",
+            "additionalProperties": true
+          },
+          "examples": [
+            {
+              "name": "first",
+              "summary": "First notification example",
+              "payload": {
+                "type": "snapshot",
+                "best_ask_amount": 100,
+                "best_ask_price": 36443,
+                "best_bid_amount": 5000,
+                "best_bid_price": 36442.5,
+                "current_funding": 0,
+                "estimated_delivery_price": 36441.64,
+                "funding_8h": 2.11e-05,
+                "index_price": 36441.64,
+                "instrument_name": "BTC-PERPETUAL",
+                "last_price": 36457.5,
+                "mark_price": 36446.51,
+                "max_price": 36991.72,
+                "min_price": 35898.37,
+                "open_interest": 502097590,
+                "settlement_price": 36169.49,
+                "state": "open",
+                "stats": {
+                  "high": 36824.5,
+                  "low": 35213.5,
+                  "price_change": 0.7229,
+                  "volume": 7871.02139035,
+                  "volume_usd": 284061480
+                },
+                "timestamp": 1623060194301
+              }
+            },
+            {
+              "name": "repeated",
+              "summary": "Repeated notification example",
+              "payload": {
+                "type": "change",
+                "best_ask_amount": 120,
+                "best_bid_amount": 300,
+                "best_bid_price": 36452.5,
+                "funding_8h": 3.11e-05,
+                "index_price": 36442.64,
+                "instrument_name": "BTC-PERPETUAL",
+                "mark_price": 36448.61,
+                "stats": {
+                  "volume": 7872.02139035,
+                  "volume_usd": 284073480
+                },
+                "timestamp": 1623060199024
+              }
+            }
+          ]
+        }
+      },
+      "tags": [
+        {
+          "name": "market-data"
+        }
+      ]
+    },
+    "perpetual.(instrument_name).(interval)": {
+      "address": "perpetual.(instrument_name).(interval)",
+      "title": "perpetual.(instrument_name).(interval) ",
+      "summary": "Provide current interest rate - but only for **perpetual** instruments. Other types won't generate any notification.",
+      "description": "",
+      "parameters": {
+        "instrument_name": {
+          "description": "The name of the instrument",
+          "examples": [
+            "BTC-PERPETUAL",
+            "ETH-PERPETUAL"
+          ]
+        },
+        "interval": {
+          "description": "Frequency of notifications",
+          "enum": [
+            "raw",
+            "100ms",
+            "agg2"
+          ],
+          "examples": [
+            "100ms",
+            "raw"
+          ]
+        }
+      },
+      "messages": {
+        "subscribe_request": {
+          "name": "subscribe_request",
+          "title": "Subscription Request",
+          "summary": "Client sends subscription request to subscribe to notification channel. Please refer to [Subscriptions page](/api-reference/subscription-management/public-subscribe) for more information.",
+          "description": "Request to subscribe to perpetual channel. Channel name format: perpetual.(instrument_name).(interval)",
+          "payload": {
+            "properties": {},
+            "additionalProperties": false
+          },
+          "examples": [
+            {
+              "name": "subscribe_request_example",
+              "summary": "Subscription request example",
+              "payload": {
+                "jsonrpc": "2.0",
+                "method": "public/subscribe",
+                "id": 42,
+                "params": {
+                  "channels": [
+                    "perpetual.BTC-PERPETUAL.100ms"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "subscription_message": {
+          "name": "perpetual_subscription_notification_data",
+          "title": "Subscription Notification Data",
+          "summary": "Server sends subscription notification data",
+          "description": "Message schema for perpetual.(instrument_name).(interval) subscription - contains only the data payload",
+          "payload": {
+            "type": "object",
+            "description": "The actual notification data",
+            "additionalProperties": true
+          },
+          "examples": [
+            {
+              "name": "repeated",
+              "summary": "Repeated notification example",
+              "payload": {
+                "interest": 0.004999511380756577,
+                "timestamp": 1571386349530,
+                "index_price": 7872.88
+              }
+            }
+          ]
+        }
+      }
+    },
+    "quote.(instrument_name)": {
+      "address": "quote.(instrument_name)",
+      "title": "quote.(instrument_name) ",
+      "summary": "Best bid/ask price and size.",
+      "description": "",
+      "parameters": {
+        "instrument_name": {
+          "description": "The name of the instrument",
+          "examples": [
+            "BTC-PERPETUAL",
+            "ETH-PERPETUAL"
+          ]
+        }
+      },
+      "messages": {
+        "subscribe_request": {
+          "name": "subscribe_request",
+          "title": "Subscription Request",
+          "summary": "Client sends subscription request to subscribe to notification channel. Please refer to [Subscriptions page](/api-reference/subscription-management/public-subscribe) for more information.",
+          "description": "Request to subscribe to quote channel. Channel name format: quote.(instrument_name)",
+          "payload": {
+            "properties": {},
+            "additionalProperties": false
+          },
+          "examples": [
+            {
+              "name": "subscribe_request_example",
+              "summary": "Subscription request example",
+              "payload": {
+                "jsonrpc": "2.0",
+                "method": "public/subscribe",
+                "id": 42,
+                "params": {
+                  "channels": [
+                    "quote.BTC-PERPETUAL"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "subscription_message": {
+          "name": "quote_subscription_notification_data",
+          "title": "Subscription Notification Data",
+          "summary": "Server sends subscription notification data",
+          "description": "Message schema for quote.(instrument_name) subscription - contains only the data payload",
+          "payload": {
+            "type": "object",
+            "description": "The actual notification data",
+            "additionalProperties": true
+          },
+          "examples": [
+            {
+              "name": "repeated",
+              "summary": "Repeated notification example",
+              "payload": {
+                "best_ask_amount": 50,
+                "best_ask_price": 3996.61,
+                "best_bid_amount": 40,
+                "best_bid_price": 3914.97,
+                "instrument_name": "BTC-PERPETUAL",
+                "timestamp": 1550658624149
+              }
+            }
+          ]
+        }
+      }
+    },
+    "trades.(instrument_name).(interval)": {
+      "address": "trades.(instrument_name).(interval)",
+      "title": "trades.(instrument_name).(interval) ",
+      "summary": "Get notifications about trades for an instrument.",
+      "description": "",
+      "parameters": {
+        "instrument_name": {
+          "description": "The name of the instrument",
+          "examples": [
+            "BTC-PERPETUAL",
+            "ETH-PERPETUAL"
+          ]
+        },
+        "interval": {
+          "description": "Frequency of notifications",
+          "enum": [
+            "raw",
+            "100ms",
+            "agg2"
+          ],
+          "examples": [
+            "100ms",
+            "raw"
+          ]
+        }
+      },
+      "messages": {
+        "subscribe_request": {
+          "name": "subscribe_request",
+          "title": "Subscription Request",
+          "summary": "Client sends subscription request to subscribe to notification channel. Please refer to [Subscriptions page](/api-reference/subscription-management/public-subscribe) for more information.",
+          "description": "Request to subscribe to trades channel. Channel name format: trades.(instrument_name).(interval)",
+          "payload": {
+            "properties": {},
+            "additionalProperties": false
+          },
+          "examples": [
+            {
+              "name": "subscribe_request_example",
+              "summary": "Subscription request example",
+              "payload": {
+                "jsonrpc": "2.0",
+                "method": "public/subscribe",
+                "id": 42,
+                "params": {
+                  "channels": [
+                    "trades.BTC-PERPETUAL.100ms"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "subscription_message": {
+          "name": "trades_subscription_notification_data",
+          "title": "Subscription Notification Data",
+          "summary": "Server sends subscription notification data",
+          "description": "Message schema for trades.(instrument_name).(interval) subscription - contains only the data payload",
+          "payload": {
+            "type": "object",
+            "description": "The actual notification data",
+            "additionalProperties": true
+          },
+          "examples": [
+            {
+              "name": "repeated",
+              "summary": "Repeated notification example",
+              "payload": [
+                {
+                  "trade_seq": 30289442,
+                  "trade_id": "48079269",
+                  "timestamp": 1590484512188,
+                  "tick_direction": 2,
+                  "price": 8950,
+                  "mark_price": 8948.9,
+                  "instrument_name": "BTC-PERPETUAL",
+                  "index_price": 8955.88,
+                  "direction": "sell",
+                  "amount": 10
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "tags": [
+        {
+          "name": "trades"
+        }
+      ]
+    },
+    "block_trade_confirmations": {
+      "address": "block_trade_confirmations",
+      "title": "block_trade_confirmations ",
+      "summary": "Provides notifications regarding block trade approval",
+      "description": "",
+      "parameters": {},
+      "messages": {
+        "subscribe_request": {
+          "name": "subscribe_request",
+          "title": "Subscription Request",
+          "summary": "Client sends subscription request to subscribe to notification channel. Please refer to [Subscriptions page](/api-reference/subscription-management/public-subscribe) for more information.",
+          "description": "Request to subscribe to block_trade_confirmations channel. This channel does not require any additional parameters.",
+          "payload": {
+            "properties": {},
+            "additionalProperties": false
+          },
+          "examples": [
+            {
+              "name": "subscribe_request_example",
+              "summary": "Subscription request example",
+              "payload": {
+                "jsonrpc": "2.0",
+                "method": "public/subscribe",
+                "id": 42,
+                "params": {
+                  "channels": [
+                    "block_trade_confirmations"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "subscription_message": {
+          "name": "block_trade_confirmations_subscription_notification_data",
+          "title": "Subscription Notification Data",
+          "summary": "Server sends subscription notification data",
+          "description": "Message schema for block_trade_confirmations subscription - contains only the data payload",
+          "payload": {
+            "type": "object",
+            "description": "The actual notification data",
+            "additionalProperties": true
+          },
+          "examples": [
+            {
+              "name": "repeated",
+              "summary": "Repeated notification example",
+              "payload": {
+                "nonce": "bt-jdqv98",
+                "role": "maker",
+                "user_id": 7,
+                "state": {
+                  "value": "rejected",
+                  "timestamp": 1711468632693
+                },
+                "trades": [
+                  {
+                    "instrument_name": "BTC-PERPETUAL",
+                    "price": 70246.66,
+                    "direction": "buy",
+                    "amount": 10
+                  }
+                ],
+                "timestamp": 1711468468131
+              }
+            }
+          ]
+        }
+      }
+    },
+    "block_trade_confirmations.(currency)": {
+      "address": "block_trade_confirmations.(currency)",
+      "title": "block_trade_confirmations.(currency) ",
+      "summary": "Provides notifications regarding block trade approval. Supports filtering by currency.",
+      "description": "",
+      "parameters": {
+        "currency": {
+          "description": "Currency code",
+          "enum": [
+            "BTC",
+            "ETH",
+            "USDC",
+            "USDT",
+            "any"
+          ],
+          "examples": [
+            "BTC",
+            "ETH"
+          ]
+        }
+      },
+      "messages": {
+        "subscribe_request": {
+          "name": "subscribe_request",
+          "title": "Subscription Request",
+          "summary": "Client sends subscription request to subscribe to notification channel. Please refer to [Subscriptions page](/api-reference/subscription-management/public-subscribe) for more information.",
+          "description": "Request to subscribe to block_trade_confirmations channel. Channel name format: block_trade_confirmations.(currency)",
+          "payload": {
+            "properties": {},
+            "additionalProperties": false
+          },
+          "examples": [
+            {
+              "name": "subscribe_request_example",
+              "summary": "Subscription request example",
+              "payload": {
+                "jsonrpc": "2.0",
+                "method": "public/subscribe",
+                "id": 42,
+                "params": {
+                  "channels": [
+                    "block_trade_confirmations.(currency)"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "subscription_message": {
+          "name": "block_trade_confirmations_subscription_notification_data",
+          "title": "Subscription Notification Data",
+          "summary": "Server sends subscription notification data",
+          "description": "Message schema for block_trade_confirmations.(currency) subscription - contains only the data payload",
+          "payload": {
+            "type": "object",
+            "description": "The actual notification data",
+            "additionalProperties": true
+          },
+          "examples": [
+            {
+              "name": "repeated",
+              "summary": "Repeated notification example",
+              "payload": {
+                "nonce": "bt-jdqv98",
+                "role": "maker",
+                "user_id": 7,
+                "state": {
+                  "value": "rejected",
+                  "timestamp": 1711468632693
+                },
+                "trades": [
+                  {
+                    "instrument_name": "BTC-PERPETUAL",
+                    "price": 70246.66,
+                    "direction": "buy",
+                    "amount": 10
+                  }
+                ],
+                "timestamp": 1711468468131
+              }
+            }
+          ]
+        }
+      }
+    },
+    "trades.(kind).(currency).(interval)": {
+      "address": "trades.(kind).(currency).(interval)",
+      "title": "trades.(kind).(currency).(interval) ",
+      "summary": "Get notifications about trades in any instrument of a given kind and given currency.",
+      "description": "",
+      "parameters": {
+        "kind": {
+          "description": "Instrument kind",
+          "enum": [
+            "future",
+            "option",
+            "spot",
+            "combo"
+          ],
+          "examples": [
+            "future",
+            "option"
+          ]
+        },
+        "currency": {
+          "description": "Currency code",
+          "enum": [
+            "BTC",
+            "ETH",
+            "USDC",
+            "USDT",
+            "any"
+          ],
+          "examples": [
+            "BTC",
+            "ETH"
+          ]
+        },
+        "interval": {
+          "description": "Frequency of notifications",
+          "enum": [
+            "raw",
+            "100ms",
+            "agg2"
+          ],
+          "examples": [
+            "100ms",
+            "raw"
+          ]
+        }
+      },
+      "messages": {
+        "subscribe_request": {
+          "name": "subscribe_request",
+          "title": "Subscription Request",
+          "summary": "Client sends subscription request to subscribe to notification channel. Please refer to [Subscriptions page](/api-reference/subscription-management/public-subscribe) for more information.",
+          "description": "Request to subscribe to trades channel. Channel name format: trades.(kind).(currency).(interval)",
+          "payload": {
+            "properties": {},
+            "additionalProperties": false
+          },
+          "examples": [
+            {
+              "name": "subscribe_request_example",
+              "summary": "Subscription request example",
+              "payload": {
+                "jsonrpc": "2.0",
+                "method": "public/subscribe",
+                "id": 42,
+                "params": {
+                  "channels": [
+                    "trades.(kind).(currency).100ms"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "subscription_message": {
+          "name": "trades_subscription_notification_data",
+          "title": "Subscription Notification Data",
+          "summary": "Server sends subscription notification data",
+          "description": "Message schema for trades.(kind).(currency).(interval) subscription - contains only the data payload",
+          "payload": {
+            "type": "object",
+            "description": "The actual notification data",
+            "additionalProperties": true
+          },
+          "examples": [
+            {
+              "name": "repeated",
+              "summary": "Repeated notification example",
+              "payload": [
+                {
+                  "trade_seq": 2,
+                  "trade_id": "48079289",
+                  "timestamp": 1590484589306,
+                  "tick_direction": 2,
+                  "price": 0.0075,
+                  "mark_price": 0.01062686,
+                  "iv": 47.58,
+                  "instrument_name": "BTC-27MAY20-9000-C",
+                  "index_price": 8956.17,
+                  "direction": "sell",
+                  "amount": 3
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "tags": [
+        {
+          "name": "trades"
+        }
+      ]
+    },
+    "deribit_price_index.(index_name)": {
+      "address": "deribit_price_index.(index_name)",
+      "title": "deribit_price_index.(index_name) ",
+      "summary": "",
+      "description": "Provides information about current value (price) for Deribit Index",
+      "parameters": {
+        "index_name": {
+          "description": "Index name",
+          "examples": [
+            "btc_usd",
+            "eth_usd"
+          ]
+        }
+      },
+      "messages": {
+        "subscribe_request": {
+          "name": "subscribe_request",
+          "title": "Subscription Request",
+          "summary": "Client sends subscription request to subscribe to notification channel. Please refer to [Subscriptions page](/api-reference/subscription-management/public-subscribe) for more information.",
+          "description": "Request to subscribe to deribit_price_index channel. Channel name format: deribit_price_index.(index_name)",
+          "payload": {
+            "properties": {},
+            "additionalProperties": false
+          },
+          "examples": [
+            {
+              "name": "subscribe_request_example",
+              "summary": "Subscription request example",
+              "payload": {
+                "jsonrpc": "2.0",
+                "method": "public/subscribe",
+                "id": 42,
+                "params": {
+                  "channels": [
+                    "deribit_price_index.(index_name)"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "subscription_message": {
+          "name": "deribit_price_index_subscription_notification_data",
+          "title": "Subscription Notification Data",
+          "summary": "Server sends subscription notification data",
+          "description": "Message schema for deribit_price_index.(index_name) subscription - contains only the data payload",
+          "payload": {
+            "type": "object",
+            "description": "The actual notification data",
+            "additionalProperties": true
+          },
+          "examples": [
+            {
+              "name": "repeated",
+              "summary": "Repeated notification example",
+              "payload": {
+                "index_name": "btc_usd",
+                "price": 3937.89,
+                "timestamp": 1550588002899
+              }
+            }
+          ]
+        }
+      },
+      "tags": [
+        {
+          "name": "indices"
+        }
+      ]
+    },
+    "deribit_price_ranking.(index_name)": {
+      "address": "deribit_price_ranking.(index_name)",
+      "title": "deribit_price_ranking.(index_name) ",
+      "summary": "",
+      "description": "Provides information about current value (price) for stock exchanges used to calculate Deribit Index",
+      "parameters": {
+        "index_name": {
+          "description": "Index name",
+          "examples": [
+            "btc_usd",
+            "eth_usd"
+          ]
+        }
+      },
+      "messages": {
+        "subscribe_request": {
+          "name": "subscribe_request",
+          "title": "Subscription Request",
+          "summary": "Client sends subscription request to subscribe to notification channel. Please refer to [Subscriptions page](/api-reference/subscription-management/public-subscribe) for more information.",
+          "description": "Request to subscribe to deribit_price_ranking channel. Channel name format: deribit_price_ranking.(index_name)",
+          "payload": {
+            "properties": {},
+            "additionalProperties": false
+          },
+          "examples": [
+            {
+              "name": "subscribe_request_example",
+              "summary": "Subscription request example",
+              "payload": {
+                "jsonrpc": "2.0",
+                "method": "public/subscribe",
+                "id": 42,
+                "params": {
+                  "channels": [
+                    "deribit_price_ranking.(index_name)"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "subscription_message": {
+          "name": "deribit_price_ranking_subscription_notification_data",
+          "title": "Subscription Notification Data",
+          "summary": "Server sends subscription notification data",
+          "description": "Message schema for deribit_price_ranking.(index_name) subscription - contains only the data payload",
+          "payload": {
+            "type": "object",
+            "description": "The actual notification data",
+            "additionalProperties": true
+          },
+          "examples": [
+            {
+              "name": "repeated",
+              "summary": "Repeated notification example",
+              "payload": [
+                {
+                  "weight": 16.666667,
+                  "original_price": 41160.5,
+                  "price": 41160.5,
+                  "identifier": "bitfinex",
+                  "timestamp": 1702465142997,
+                  "enabled": true
+                },
+                {
+                  "weight": 16.666667,
+                  "original_price": 41119,
+                  "price": 41119,
+                  "identifier": "bitstamp",
+                  "timestamp": 1702465143045,
+                  "enabled": true
+                },
+                {
+                  "weight": 16.666667,
+                  "original_price": 41115.53,
+                  "price": 41115.53,
+                  "identifier": "coinbase",
+                  "timestamp": 1702465139000,
+                  "enabled": true
+                },
+                {
+                  "weight": 16.666667,
+                  "original_price": 41116.42,
+                  "price": 41116.42,
+                  "identifier": "gemini",
+                  "timestamp": 1702465142921,
+                  "enabled": true
+                },
+                {
+                  "weight": 16.666667,
+                  "original_price": 41108.88,
+                  "price": 41108.88,
+                  "identifier": "itbit",
+                  "timestamp": 1702465141954,
+                  "enabled": true
+                },
+                {
+                  "weight": 16.666667,
+                  "original_price": 41108.35,
+                  "price": 41108.35,
+                  "identifier": "kraken",
+                  "timestamp": 1702465142906,
+                  "enabled": true
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "tags": [
+        {
+          "name": "indices"
+        }
+      ]
+    },
+    "deribit_price_statistics.(index_name)": {
+      "address": "deribit_price_statistics.(index_name)",
+      "title": "deribit_price_statistics.(index_name) ",
+      "summary": "",
+      "description": "This subscription provides basic statistics about Deribit Index",
+      "parameters": {
+        "index_name": {
+          "description": "Index name",
+          "examples": [
+            "btc_usd",
+            "eth_usd"
+          ]
+        }
+      },
+      "messages": {
+        "subscribe_request": {
+          "name": "subscribe_request",
+          "title": "Subscription Request",
+          "summary": "Client sends subscription request to subscribe to notification channel. Please refer to [Subscriptions page](/api-reference/subscription-management/public-subscribe) for more information.",
+          "description": "Request to subscribe to deribit_price_statistics channel. Channel name format: deribit_price_statistics.(index_name)",
+          "payload": {
+            "properties": {},
+            "additionalProperties": false
+          },
+          "examples": [
+            {
+              "name": "subscribe_request_example",
+              "summary": "Subscription request example",
+              "payload": {
+                "jsonrpc": "2.0",
+                "method": "public/subscribe",
+                "id": 42,
+                "params": {
+                  "channels": [
+                    "deribit_price_statistics.(index_name)"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "subscription_message": {
+          "name": "deribit_price_statistics_subscription_notification_data",
+          "title": "Subscription Notification Data",
+          "summary": "Server sends subscription notification data",
+          "description": "Message schema for deribit_price_statistics.(index_name) subscription - contains only the data payload",
+          "payload": {
+            "type": "object",
+            "description": "The actual notification data",
+            "additionalProperties": true
+          },
+          "examples": [
+            {
+              "name": "repeated",
+              "summary": "Repeated notification example",
+              "payload": {
+                "low24h": 58012.08,
+                "index_name": "btc_usd",
+                "high24h": 59311.42,
+                "change24h": 1009.61,
+                "high_volatility": false
+              }
+            }
+          ]
+        }
+      },
+      "tags": [
+        {
+          "name": "indices"
+        }
+      ]
+    },
+    "deribit_volatility_index.(index_name)": {
+      "address": "deribit_volatility_index.(index_name)",
+      "title": "deribit_volatility_index.(index_name) ",
+      "summary": "",
+      "description": "Provides volatility index subscription",
+      "parameters": {
+        "index_name": {
+          "description": "Index name",
+          "examples": [
+            "btc_usd",
+            "eth_usd"
+          ]
+        }
+      },
+      "messages": {
+        "subscribe_request": {
+          "name": "subscribe_request",
+          "title": "Subscription Request",
+          "summary": "Client sends subscription request to subscribe to notification channel. Please refer to [Subscriptions page](/api-reference/subscription-management/public-subscribe) for more information.",
+          "description": "Request to subscribe to deribit_volatility_index channel. Channel name format: deribit_volatility_index.(index_name)",
+          "payload": {
+            "properties": {},
+            "additionalProperties": false
+          },
+          "examples": [
+            {
+              "name": "subscribe_request_example",
+              "summary": "Subscription request example",
+              "payload": {
+                "jsonrpc": "2.0",
+                "method": "public/subscribe",
+                "id": 42,
+                "params": {
+                  "channels": [
+                    "deribit_volatility_index.(index_name)"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "subscription_message": {
+          "name": "deribit_volatility_index_subscription_notification_data",
+          "title": "Subscription Notification Data",
+          "summary": "Server sends subscription notification data",
+          "description": "Message schema for deribit_volatility_index.(index_name) subscription - contains only the data payload",
+          "payload": {
+            "type": "object",
+            "description": "The actual notification data",
+            "additionalProperties": true
+          },
+          "examples": [
+            {
+              "name": "repeated",
+              "summary": "Repeated notification example",
+              "payload": {
+                "volatility": 129.36,
+                "timestamp": 1619777946007,
+                "index_name": "btc_usd"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "markprice.options.(index_name)": {
+      "address": "markprice.options.(index_name)",
+      "title": "markprice.options.(index_name) ",
+      "summary": "Provides information about options markprices.",
+      "description": "",
+      "parameters": {
+        "index_name": {
+          "description": "Index name",
+          "examples": [
+            "btc_usd",
+            "eth_usd"
+          ]
+        }
+      },
+      "messages": {
+        "subscribe_request": {
+          "name": "subscribe_request",
+          "title": "Subscription Request",
+          "summary": "Client sends subscription request to subscribe to notification channel. Please refer to [Subscriptions page](/api-reference/subscription-management/public-subscribe) for more information.",
+          "description": "Request to subscribe to markprice channel. Channel name format: markprice.options.(index_name)",
+          "payload": {
+            "properties": {},
+            "additionalProperties": false
+          },
+          "examples": [
+            {
+              "name": "subscribe_request_example",
+              "summary": "Subscription request example",
+              "payload": {
+                "jsonrpc": "2.0",
+                "method": "public/subscribe",
+                "id": 42,
+                "params": {
+                  "channels": [
+                    "markprice.options.(index_name)"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "subscription_message": {
+          "name": "markprice_subscription_notification_data",
+          "title": "Subscription Notification Data",
+          "summary": "Server sends subscription notification data",
+          "description": "Message schema for markprice.options.(index_name) subscription - contains only the data payload",
+          "payload": {
+            "type": "object",
+            "description": "The actual notification data",
+            "additionalProperties": true
+          },
+          "examples": [
+            {
+              "name": "repeated",
+              "summary": "Repeated notification example",
+              "payload": [
+                {
+                  "timestamp": 1622470378005,
+                  "mark_price": 0.0333,
+                  "iv": 0.9,
+                  "instrument_name": "BTC-2JUN21-37000-P"
+                },
+                {
+                  "timestamp": 1622470378005,
+                  "mark_price": 0.117,
+                  "iv": 0.9,
+                  "instrument_name": "BTC-4JUN21-40500-P"
+                },
+                {
+                  "timestamp": 1622470378005,
+                  "mark_price": 0.0177,
+                  "iv": 0.9,
+                  "instrument_name": "BTC-4JUN21-38250-C"
+                },
+                {
+                  "timestamp": 1622470378005,
+                  "mark_price": 0.0098,
+                  "iv": 0.9,
+                  "instrument_name": "BTC-1JUN21-37000-C"
+                },
+                {
+                  "timestamp": 1622470378005,
+                  "mark_price": 0.0371,
+                  "iv": 0.9,
+                  "instrument_name": "BTC-4JUN21-36500-P"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "estimated_expiration_price.(index_name)": {
+      "address": "estimated_expiration_price.(index_name)",
+      "title": "estimated_expiration_price.(index_name) ",
+      "summary": "",
+      "description": "Returns calculated (estimated) ending price for given index.",
+      "parameters": {
+        "index_name": {
+          "description": "Index name",
+          "examples": [
+            "btc_usd",
+            "eth_usd"
+          ]
+        }
+      },
+      "messages": {
+        "subscribe_request": {
+          "name": "subscribe_request",
+          "title": "Subscription Request",
+          "summary": "Client sends subscription request to subscribe to notification channel. Please refer to [Subscriptions page](/api-reference/subscription-management/public-subscribe) for more information.",
+          "description": "Request to subscribe to estimated_expiration_price channel. Channel name format: estimated_expiration_price.(index_name)",
+          "payload": {
+            "properties": {},
+            "additionalProperties": false
+          },
+          "examples": [
+            {
+              "name": "subscribe_request_example",
+              "summary": "Subscription request example",
+              "payload": {
+                "jsonrpc": "2.0",
+                "method": "public/subscribe",
+                "id": 42,
+                "params": {
+                  "channels": [
+                    "estimated_expiration_price.(index_name)"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "subscription_message": {
+          "name": "estimated_expiration_price_subscription_notification_data",
+          "title": "Subscription Notification Data",
+          "summary": "Server sends subscription notification data",
+          "description": "Message schema for estimated_expiration_price.(index_name) subscription - contains only the data payload",
+          "payload": {
+            "type": "object",
+            "description": "The actual notification data",
+            "additionalProperties": true
+          },
+          "examples": [
+            {
+              "name": "repeated",
+              "summary": "Repeated notification example",
+              "payload": {
+                "is_estimated": false,
+                "price": 3939.73,
+                "seconds": 180929
+              }
+            }
+          ]
+        }
+      }
+    },
+    "chart.trades.(instrument_name).(resolution)": {
+      "address": "chart.trades.(instrument_name).(resolution)",
+      "title": "chart.trades.(instrument_name).(resolution) ",
+      "summary": "Publicly available market data used to generate a TradingView candle chart. During a single resolution period, many events can be sent, each with updated values for the recent period.<br/><br/> **NOTICE** When there is no trade during the requested resolution period (e.g. 1 minute), then a filling sample is generated which uses data from the last available trade candle (open and close values).",
+      "description": "",
+      "parameters": {
+        "instrument_name": {
+          "description": "The name of the instrument",
+          "examples": [
+            "BTC-PERPETUAL",
+            "ETH-PERPETUAL"
+          ]
+        },
+        "resolution": {
+          "description": "Chart resolution",
+          "enum": [
+            "1",
+            "3",
+            "5",
+            "10",
+            "15",
+            "30",
+            "60",
+            "120",
+            "180",
+            "240",
+            "D",
+            "W",
+            "M"
+          ],
+          "examples": [
+            "60",
+            "D"
+          ]
+        }
+      },
+      "messages": {
+        "subscribe_request": {
+          "name": "subscribe_request",
+          "title": "Subscription Request",
+          "summary": "Client sends subscription request to subscribe to notification channel. Please refer to [Subscriptions page](/api-reference/subscription-management/public-subscribe) for more information.",
+          "description": "Request to subscribe to chart channel. Channel name format: chart.trades.(instrument_name).(resolution)",
+          "payload": {
+            "properties": {},
+            "additionalProperties": false
+          },
+          "examples": [
+            {
+              "name": "subscribe_request_example",
+              "summary": "Subscription request example",
+              "payload": {
+                "jsonrpc": "2.0",
+                "method": "public/subscribe",
+                "id": 42,
+                "params": {
+                  "channels": [
+                    "chart.trades.BTC-PERPETUAL.(resolution)"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "subscription_message": {
+          "name": "chart_subscription_notification_data",
+          "title": "Subscription Notification Data",
+          "summary": "Server sends subscription notification data",
+          "description": "Message schema for chart.trades.(instrument_name).(resolution) subscription - contains only the data payload",
+          "payload": {
+            "type": "object",
+            "description": "The actual notification data",
+            "additionalProperties": true
+          },
+          "examples": [
+            {
+              "name": "repeated",
+              "summary": "Repeated notification example",
+              "payload": {
+                "volume": 0.05219351,
+                "tick": 1573645080000,
+                "open": 8869.79,
+                "low": 8788.25,
+                "high": 8870.31,
+                "cost": 460,
+                "close": 8791.25
+              }
+            }
+          ]
+        }
+      },
+      "tags": [
+        {
+          "name": "trades"
+        }
+      ]
+    },
+    "user.mmp_trigger.(index_name)": {
+      "address": "user.mmp_trigger.(index_name)",
+      "title": "user.mmp_trigger.(index_name) ",
+      "summary": "",
+      "description": "Triggered when one of mmp limits is crossed",
+      "parameters": {
+        "index_name": {
+          "description": "Index name",
+          "examples": [
+            "btc_usd",
+            "eth_usd"
+          ]
+        }
+      },
+      "messages": {
+        "subscribe_request": {
+          "name": "subscribe_request",
+          "title": "Subscription Request",
+          "summary": "Client sends subscription request to subscribe to notification channel. Please refer to [Subscriptions page](/api-reference/subscription-management/public-subscribe) for more information.",
+          "description": "Request to subscribe to user channel. Channel name format: user.mmp_trigger.(index_name)",
+          "payload": {
+            "properties": {},
+            "additionalProperties": false
+          },
+          "examples": [
+            {
+              "name": "subscribe_request_example",
+              "summary": "Subscription request example",
+              "payload": {
+                "jsonrpc": "2.0",
+                "method": "public/subscribe",
+                "id": 42,
+                "params": {
+                  "channels": [
+                    "user.mmp_trigger.(index_name)"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "subscription_message": {
+          "name": "user_subscription_notification_data",
+          "title": "Subscription Notification Data",
+          "summary": "Server sends subscription notification data",
+          "description": "Message schema for user.mmp_trigger.(index_name) subscription - contains only the data payload",
+          "payload": {
+            "type": "object",
+            "description": "The actual notification data",
+            "additionalProperties": true
+          }
+        }
+      },
+      "tags": [
+        {
+          "name": "private"
+        }
+      ]
+    },
+    "user.portfolio.(currency)": {
+      "address": "user.portfolio.(currency)",
+      "title": "user.portfolio.(currency) ",
+      "summary": "",
+      "description": "Provides information about current user portfolio",
+      "parameters": {
+        "currency": {
+          "description": "Currency code",
+          "enum": [
+            "BTC",
+            "ETH",
+            "USDC",
+            "USDT",
+            "any"
+          ],
+          "examples": [
+            "BTC",
+            "ETH"
+          ]
+        }
+      },
+      "messages": {
+        "subscribe_request": {
+          "name": "subscribe_request",
+          "title": "Subscription Request",
+          "summary": "Client sends subscription request to subscribe to notification channel. Please refer to [Subscriptions page](/api-reference/subscription-management/public-subscribe) for more information.",
+          "description": "Request to subscribe to user channel. Channel name format: user.portfolio.(currency)",
+          "payload": {
+            "properties": {},
+            "additionalProperties": false
+          },
+          "examples": [
+            {
+              "name": "subscribe_request_example",
+              "summary": "Subscription request example",
+              "payload": {
+                "jsonrpc": "2.0",
+                "method": "public/subscribe",
+                "id": 42,
+                "params": {
+                  "channels": [
+                    "user.portfolio.(currency)"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "subscription_message": {
+          "name": "user_subscription_notification_data",
+          "title": "Subscription Notification Data",
+          "summary": "Server sends subscription notification data",
+          "description": "Message schema for user.portfolio.(currency) subscription - contains only the data payload",
+          "payload": {
+            "type": "object",
+            "description": "The actual notification data",
+            "additionalProperties": true
+          },
+          "examples": [
+            {
+              "name": "repeated",
+              "summary": "Repeated notification example",
+              "payload": {
+                "delta_total_map": {
+                  "btc_usd": 31.594397699
+                },
+                "margin_balance": 302.62675921,
+                "futures_session_rpl": -0.03311399,
+                "options_session_rpl": 0,
+                "estimated_liquidation_ratio_map": {
+                  "btc_usd": 0.10098729140701267
+                },
+                "session_upl": 0.05341555,
+                "estimated_liquidation_ratio": 0.10098729,
+                "options_gamma_map": {
+                  "btc_usd": 1e-05
+                },
+                "options_vega": 0.07976,
+                "options_value": -0.0079,
+                "available_withdrawal_funds": 301.35426172,
+                "projected_delta_total": 32.613978,
+                "maintenance_margin": 0.8854841,
+                "total_pl": -0.33014225,
+                "options_theta_map": {
+                  "btc_usd": 16.13825
+                },
+                "projected_maintenance_margin": 0.7543841,
+                "available_funds": 301.38036328,
+                "options_delta": -1.01958,
+                "balance": 302.60065765,
+                "equity": 302.6188592,
+                "futures_session_upl": 0.05921555,
+                "fee_balance": 0,
+                "currency": "BTC",
+                "options_session_upl": -0.0058,
+                "projected_initial_margin": 1.01529592,
+                "options_theta": 16.13825,
+                "portfolio_margining_enabled": false,
+                "cross_collateral_enabled": false,
+                "margin_model": "segregated_sm",
+                "options_vega_map": {
+                  "btc_usd": 0.07976
+                },
+                "futures_pl": -0.32434225,
+                "options_pl": -0.0058,
+                "initial_margin": 1.24639592,
+                "spot_reserve": 0,
+                "delta_total": 31.602298,
+                "options_gamma": 1e-05,
+                "session_rpl": -0.03311399,
+                "additional_reserve": 0
+              }
+            }
+          ]
+        }
+      },
+      "tags": [
+        {
+          "name": "private"
+        },
+        {
+          "name": "portfolio"
+        }
+      ]
+    },
+    "user.trades.(instrument_name).(interval)": {
+      "address": "user.trades.(instrument_name).(interval)",
+      "title": "user.trades.(instrument_name).(interval) ",
+      "summary": "Get notifications about the user's trades in an instrument.",
+      "description": "",
+      "parameters": {
+        "instrument_name": {
+          "description": "The name of the instrument",
+          "examples": [
+            "BTC-PERPETUAL",
+            "ETH-PERPETUAL"
+          ]
+        },
+        "interval": {
+          "description": "Frequency of notifications",
+          "enum": [
+            "raw",
+            "100ms",
+            "agg2"
+          ],
+          "examples": [
+            "100ms",
+            "raw"
+          ]
+        }
+      },
+      "messages": {
+        "subscribe_request": {
+          "name": "subscribe_request",
+          "title": "Subscription Request",
+          "summary": "Client sends subscription request to subscribe to notification channel. Please refer to [Subscriptions page](/api-reference/subscription-management/public-subscribe) for more information.",
+          "description": "Request to subscribe to user channel. Channel name format: user.trades.(instrument_name).(interval)",
+          "payload": {
+            "properties": {},
+            "additionalProperties": false
+          },
+          "examples": [
+            {
+              "name": "subscribe_request_example",
+              "summary": "Subscription request example",
+              "payload": {
+                "jsonrpc": "2.0",
+                "method": "public/subscribe",
+                "id": 42,
+                "params": {
+                  "channels": [
+                    "user.trades.BTC-PERPETUAL.100ms"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "subscription_message": {
+          "name": "user_subscription_notification_data",
+          "title": "Subscription Notification Data",
+          "summary": "Server sends subscription notification data",
+          "description": "Message schema for user.trades.(instrument_name).(interval) subscription - contains only the data payload",
+          "payload": {
+            "type": "object",
+            "description": "The actual notification data",
+            "additionalProperties": true
+          },
+          "examples": [
+            {
+              "name": "repeated",
+              "summary": "Repeated notification example",
+              "payload": [
+                {
+                  "trade_seq": 30289432,
+                  "trade_id": "48079254",
+                  "timestamp": 1590484156350,
+                  "tick_direction": 0,
+                  "state": "filled",
+                  "reduce_only": false,
+                  "price": 8954,
+                  "post_only": false,
+                  "order_type": "market",
+                  "order_id": "4008965646",
+                  "matching_id": null,
+                  "mark_price": 8952.86,
+                  "liquidity": "T",
+                  "instrument_name": "BTC-PERPETUAL",
+                  "index_price": 8956.73,
+                  "fee_currency": "BTC",
+                  "fee": 1.68e-06,
+                  "direction": "sell",
+                  "amount": 20
+                },
+                {
+                  "trade_seq": 30289433,
+                  "trade_id": "48079255",
+                  "timestamp": 1590484156350,
+                  "tick_direction": 1,
+                  "state": "filled",
+                  "reduce_only": false,
+                  "price": 8954,
+                  "post_only": false,
+                  "order_type": "market",
+                  "order_id": "4008965646",
+                  "matching_id": null,
+                  "mark_price": 8952.86,
+                  "liquidity": "T",
+                  "instrument_name": "BTC-PERPETUAL",
+                  "index_price": 8956.73,
+                  "fee_currency": "BTC",
+                  "fee": 1.68e-06,
+                  "direction": "sell",
+                  "amount": 20
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "tags": [
+        {
+          "name": "private"
+        },
+        {
+          "name": "trades"
+        }
+      ]
+    },
+    "user.trades.(kind).(currency).(interval)": {
+      "address": "user.trades.(kind).(currency).(interval)",
+      "title": "user.trades.(kind).(currency).(interval) ",
+      "summary": "Get notifications about the user's trades in any instrument of a given kind and given currency.",
+      "description": "",
+      "parameters": {
+        "kind": {
+          "description": "Instrument kind",
+          "enum": [
+            "future",
+            "option",
+            "spot",
+            "combo"
+          ],
+          "examples": [
+            "future",
+            "option"
+          ]
+        },
+        "currency": {
+          "description": "Currency code",
+          "enum": [
+            "BTC",
+            "ETH",
+            "USDC",
+            "USDT",
+            "any"
+          ],
+          "examples": [
+            "BTC",
+            "ETH"
+          ]
+        },
+        "interval": {
+          "description": "Frequency of notifications",
+          "enum": [
+            "raw",
+            "100ms",
+            "agg2"
+          ],
+          "examples": [
+            "100ms",
+            "raw"
+          ]
+        }
+      },
+      "messages": {
+        "subscribe_request": {
+          "name": "subscribe_request",
+          "title": "Subscription Request",
+          "summary": "Client sends subscription request to subscribe to notification channel. Please refer to [Subscriptions page](/api-reference/subscription-management/public-subscribe) for more information.",
+          "description": "Request to subscribe to user channel. Channel name format: user.trades.(kind).(currency).(interval)",
+          "payload": {
+            "properties": {},
+            "additionalProperties": false
+          },
+          "examples": [
+            {
+              "name": "subscribe_request_example",
+              "summary": "Subscription request example",
+              "payload": {
+                "jsonrpc": "2.0",
+                "method": "public/subscribe",
+                "id": 42,
+                "params": {
+                  "channels": [
+                    "user.trades.(kind).(currency).100ms"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "subscription_message": {
+          "name": "user_subscription_notification_data",
+          "title": "Subscription Notification Data",
+          "summary": "Server sends subscription notification data",
+          "description": "Message schema for user.trades.(kind).(currency).(interval) subscription - contains only the data payload",
+          "payload": {
+            "type": "object",
+            "description": "The actual notification data",
+            "additionalProperties": true
+          },
+          "examples": [
+            {
+              "name": "repeated",
+              "summary": "Repeated notification example",
+              "payload": [
+                {
+                  "trade_seq": 74405,
+                  "trade_id": "48079262",
+                  "timestamp": 1590484255886,
+                  "tick_direction": 2,
+                  "state": "filled",
+                  "reduce_only": false,
+                  "price": 8947,
+                  "post_only": false,
+                  "order_type": "limit",
+                  "order_id": "4008978075",
+                  "matching_id": null,
+                  "mark_price": 8970.03,
+                  "liquidity": "T",
+                  "instrument_name": "BTC-25SEP20",
+                  "index_price": 8953.53,
+                  "fee_currency": "BTC",
+                  "fee": 0.00049961,
+                  "direction": "sell",
+                  "amount": 8940
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "tags": [
+        {
+          "name": "private"
+        },
+        {
+          "name": "trades"
+        }
+      ]
+    },
+    "user.combo_trades.(instrument_name).(interval)": {
+      "address": "user.combo_trades.(instrument_name).(interval)",
+      "title": "user.combo_trades.(instrument_name).(interval) ",
+      "summary": "Get notifications about the user's trades in an instrument (trades contain `legs` field).",
+      "description": "",
+      "parameters": {
+        "instrument_name": {
+          "description": "The name of the instrument",
+          "examples": [
+            "BTC-PERPETUAL",
+            "ETH-PERPETUAL"
+          ]
+        },
+        "interval": {
+          "description": "Frequency of notifications",
+          "enum": [
+            "raw",
+            "100ms",
+            "agg2"
+          ],
+          "examples": [
+            "100ms",
+            "raw"
+          ]
+        }
+      },
+      "messages": {
+        "subscribe_request": {
+          "name": "subscribe_request",
+          "title": "Subscription Request",
+          "summary": "Client sends subscription request to subscribe to notification channel. Please refer to [Subscriptions page](/api-reference/subscription-management/public-subscribe) for more information.",
+          "description": "Request to subscribe to user channel. Channel name format: user.combo_trades.(instrument_name).(interval)",
+          "payload": {
+            "properties": {},
+            "additionalProperties": false
+          },
+          "examples": [
+            {
+              "name": "subscribe_request_example",
+              "summary": "Subscription request example",
+              "payload": {
+                "jsonrpc": "2.0",
+                "method": "public/subscribe",
+                "id": 42,
+                "params": {
+                  "channels": [
+                    "user.combo_trades.BTC-PERPETUAL.100ms"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "subscription_message": {
+          "name": "user_subscription_notification_data",
+          "title": "Subscription Notification Data",
+          "summary": "Server sends subscription notification data",
+          "description": "Message schema for user.combo_trades.(instrument_name).(interval) subscription - contains only the data payload",
+          "payload": {
+            "type": "object",
+            "description": "The actual notification data",
+            "additionalProperties": true
+          },
+          "examples": [
+            {
+              "name": "repeated",
+              "summary": "Repeated notification example",
+              "payload": [
+                {
+                  "trade_seq": 39,
+                  "trade_id": "1154",
+                  "timestamp": 1661867454334,
+                  "tick_direction": 2,
+                  "state": "filled",
+                  "risk_reducing": false,
+                  "reduce_only": false,
+                  "profit_loss": null,
+                  "price": 1191.82,
+                  "post_only": false,
+                  "order_type": "limit",
+                  "order_id": "720074",
+                  "mmp": false,
+                  "matching_id": null,
+                  "mark_price": 767.6,
+                  "liquidity": "T",
+                  "legs": [
+                    {
+                      "trade_seq": 179,
+                      "trade_id": "1156",
+                      "timestamp": 1661867454335,
+                      "tick_direction": 2,
+                      "state": "filled",
+                      "risk_reducing": false,
+                      "reduce_only": false,
+                      "profit_loss": 0,
+                      "price": 20008.5,
+                      "post_only": false,
+                      "order_type": "limit",
+                      "order_id": "720078",
+                      "mmp": false,
+                      "matching_id": null,
+                      "mark_price": 20220.61,
+                      "liquidity": "T",
+                      "instrument_name": "BTC-PERPETUAL",
+                      "index_price": 20332.44,
+                      "fee_currency": "BTC",
+                      "fee": 5e-08,
+                      "direction": "buy",
+                      "combo_trade_id": "1154",
+                      "combo_id": "BTC-FS-2SEP22_PERP",
+                      "api": false,
+                      "amount": 10
+                    },
+                    {
+                      "trade_seq": 159,
+                      "trade_id": "1155",
+                      "timestamp": 1661867454335,
+                      "tick_direction": 0,
+                      "state": "filled",
+                      "risk_reducing": false,
+                      "reduce_only": false,
+                      "profit_loss": 0,
+                      "price": 21200.32,
+                      "post_only": false,
+                      "order_type": "limit",
+                      "order_id": "720077",
+                      "mmp": false,
+                      "matching_id": null,
+                      "mark_price": 20988.21,
+                      "liquidity": "T",
+                      "instrument_name": "BTC-2SEP22",
+                      "index_price": 20332.44,
+                      "fee_currency": "BTC",
+                      "fee": 5e-08,
+                      "direction": "sell",
+                      "combo_trade_id": "1154",
+                      "combo_id": "BTC-FS-2SEP22_PERP",
+                      "api": false,
+                      "amount": 10
+                    }
+                  ],
+                  "instrument_name": "BTC-FS-2SEP22_PERP",
+                  "index_price": 20332.44,
+                  "fee_currency": "BTC",
+                  "fee": 0,
+                  "direction": "sell",
+                  "api": false,
+                  "amount": 10
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "tags": [
+        {
+          "name": "private"
+        },
+        {
+          "name": "trades"
+        }
+      ]
+    },
+    "user.combo_trades.(kind).(currency).(interval)": {
+      "address": "user.combo_trades.(kind).(currency).(interval)",
+      "title": "user.combo_trades.(kind).(currency).(interval) ",
+      "summary": "Get notifications about the user's trades in any instrument of a given kind and given currency (trades contain `legs` field).",
+      "description": "",
+      "parameters": {
+        "kind": {
+          "description": "Instrument kind",
+          "enum": [
+            "future",
+            "option",
+            "spot",
+            "combo"
+          ],
+          "examples": [
+            "future",
+            "option"
+          ]
+        },
+        "currency": {
+          "description": "Currency code",
+          "enum": [
+            "BTC",
+            "ETH",
+            "USDC",
+            "USDT",
+            "any"
+          ],
+          "examples": [
+            "BTC",
+            "ETH"
+          ]
+        },
+        "interval": {
+          "description": "Frequency of notifications",
+          "enum": [
+            "raw",
+            "100ms",
+            "agg2"
+          ],
+          "examples": [
+            "100ms",
+            "raw"
+          ]
+        }
+      },
+      "messages": {
+        "subscribe_request": {
+          "name": "subscribe_request",
+          "title": "Subscription Request",
+          "summary": "Client sends subscription request to subscribe to notification channel. Please refer to [Subscriptions page](/api-reference/subscription-management/public-subscribe) for more information.",
+          "description": "Request to subscribe to user channel. Channel name format: user.combo_trades.(kind).(currency).(interval)",
+          "payload": {
+            "properties": {},
+            "additionalProperties": false
+          },
+          "examples": [
+            {
+              "name": "subscribe_request_example",
+              "summary": "Subscription request example",
+              "payload": {
+                "jsonrpc": "2.0",
+                "method": "public/subscribe",
+                "id": 42,
+                "params": {
+                  "channels": [
+                    "user.combo_trades.(kind).(currency).100ms"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "subscription_message": {
+          "name": "user_subscription_notification_data",
+          "title": "Subscription Notification Data",
+          "summary": "Server sends subscription notification data",
+          "description": "Message schema for user.combo_trades.(kind).(currency).(interval) subscription - contains only the data payload",
+          "payload": {
+            "type": "object",
+            "description": "The actual notification data",
+            "additionalProperties": true
+          },
+          "examples": [
+            {
+              "name": "repeated",
+              "summary": "Repeated notification example",
+              "payload": [
+                {
+                  "trade_seq": 39,
+                  "trade_id": "1154",
+                  "timestamp": 1661867454334,
+                  "tick_direction": 2,
+                  "state": "filled",
+                  "risk_reducing": false,
+                  "reduce_only": false,
+                  "profit_loss": null,
+                  "price": 1191.82,
+                  "post_only": false,
+                  "order_type": "limit",
+                  "order_id": "720074",
+                  "mmp": false,
+                  "matching_id": null,
+                  "mark_price": 767.6,
+                  "liquidity": "T",
+                  "legs": [
+                    {
+                      "trade_seq": 179,
+                      "trade_id": "1156",
+                      "timestamp": 1661867454335,
+                      "tick_direction": 2,
+                      "state": "filled",
+                      "risk_reducing": false,
+                      "reduce_only": false,
+                      "profit_loss": 0,
+                      "price": 20008.5,
+                      "post_only": false,
+                      "order_type": "limit",
+                      "order_id": "720078",
+                      "mmp": false,
+                      "matching_id": null,
+                      "mark_price": 20220.61,
+                      "liquidity": "T",
+                      "instrument_name": "BTC-PERPETUAL",
+                      "index_price": 20332.44,
+                      "fee_currency": "BTC",
+                      "fee": 5e-08,
+                      "direction": "buy",
+                      "combo_trade_id": "1154",
+                      "combo_id": "BTC-FS-2SEP22_PERP",
+                      "api": false,
+                      "amount": 10
+                    },
+                    {
+                      "trade_seq": 159,
+                      "trade_id": "1155",
+                      "timestamp": 1661867454335,
+                      "tick_direction": 0,
+                      "state": "filled",
+                      "risk_reducing": false,
+                      "reduce_only": false,
+                      "profit_loss": 0,
+                      "price": 21200.32,
+                      "post_only": false,
+                      "order_type": "limit",
+                      "order_id": "720077",
+                      "mmp": false,
+                      "matching_id": null,
+                      "mark_price": 20988.21,
+                      "liquidity": "T",
+                      "instrument_name": "BTC-2SEP22",
+                      "index_price": 20332.44,
+                      "fee_currency": "BTC",
+                      "fee": 5e-08,
+                      "direction": "sell",
+                      "combo_trade_id": "1154",
+                      "combo_id": "BTC-FS-2SEP22_PERP",
+                      "api": false,
+                      "amount": 10
+                    }
+                  ],
+                  "instrument_name": "BTC-FS-2SEP22_PERP",
+                  "index_price": 20332.44,
+                  "fee_currency": "BTC",
+                  "fee": 0,
+                  "direction": "sell",
+                  "api": false,
+                  "amount": 10
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "tags": [
+        {
+          "name": "private"
+        },
+        {
+          "name": "trades"
+        }
+      ]
+    },
+    "instrument.state.(kind).(currency)": {
+      "address": "instrument.state.(kind).(currency)",
+      "title": "instrument.state.(kind).(currency) ",
+      "summary": "Get notifications about new or terminated instruments of given kind in given currency. **(Please note that our system does not send notifications when currencies are locked. Users are advised to subscribe to the [platform_state](https://docs.deribit.com/#platform_state) channel to monitor the state of currencies actively.)**",
+      "description": "",
+      "parameters": {
+        "kind": {
+          "description": "Instrument kind",
+          "enum": [
+            "future",
+            "option",
+            "spot",
+            "combo"
+          ],
+          "examples": [
+            "future",
+            "option"
+          ]
+        },
+        "currency": {
+          "description": "Currency code",
+          "enum": [
+            "BTC",
+            "ETH",
+            "USDC",
+            "USDT",
+            "any"
+          ],
+          "examples": [
+            "BTC",
+            "ETH"
+          ]
+        }
+      },
+      "messages": {
+        "subscribe_request": {
+          "name": "subscribe_request",
+          "title": "Subscription Request",
+          "summary": "Client sends subscription request to subscribe to notification channel. Please refer to [Subscriptions page](/api-reference/subscription-management/public-subscribe) for more information.",
+          "description": "Request to subscribe to instrument channel. Channel name format: instrument.state.(kind).(currency)",
+          "payload": {
+            "properties": {},
+            "additionalProperties": false
+          },
+          "examples": [
+            {
+              "name": "subscribe_request_example",
+              "summary": "Subscription request example",
+              "payload": {
+                "jsonrpc": "2.0",
+                "method": "public/subscribe",
+                "id": 42,
+                "params": {
+                  "channels": [
+                    "instrument.state.(kind).(currency)"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "subscription_message": {
+          "name": "instrument_subscription_notification_data",
+          "title": "Subscription Notification Data",
+          "summary": "Server sends subscription notification data",
+          "description": "Message schema for instrument.state.(kind).(currency) subscription - contains only the data payload",
+          "payload": {
+            "type": "object",
+            "description": "The actual notification data",
+            "additionalProperties": true
+          },
+          "examples": [
+            {
+              "name": "repeated",
+              "summary": "Repeated notification example",
+              "payload": {
+                "timestamp": 1553080940000,
+                "state": "created",
+                "instrument_name": "BTC-22MAR19"
+              }
+            }
+          ]
+        }
+      },
+      "tags": [
+        {
+          "name": "internal"
+        }
+      ]
+    },
+    "user.orders.(instrument_name).raw": {
+      "address": "user.orders.(instrument_name).raw",
+      "title": "user.orders.(instrument_name).raw ",
+      "summary": "Get notifications about changes in user's orders for given instrument.",
+      "description": "",
+      "parameters": {
+        "instrument_name": {
+          "description": "The name of the instrument",
+          "examples": [
+            "BTC-PERPETUAL",
+            "ETH-PERPETUAL"
+          ]
+        }
+      },
+      "messages": {
+        "subscribe_request": {
+          "name": "subscribe_request",
+          "title": "Subscription Request",
+          "summary": "Client sends subscription request to subscribe to notification channel. Please refer to [Subscriptions page](/api-reference/subscription-management/public-subscribe) for more information.",
+          "description": "Request to subscribe to user channel. Channel name format: user.orders.(instrument_name).raw",
+          "payload": {
+            "properties": {},
+            "additionalProperties": false
+          },
+          "examples": [
+            {
+              "name": "subscribe_request_example",
+              "summary": "Subscription request example",
+              "payload": {
+                "jsonrpc": "2.0",
+                "method": "public/subscribe",
+                "id": 42,
+                "params": {
+                  "channels": [
+                    "user.orders.BTC-PERPETUAL.raw"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "subscription_message": {
+          "name": "user_subscription_notification_data",
+          "title": "Subscription Notification Data",
+          "summary": "Server sends subscription notification data",
+          "description": "Message schema for user.orders.(instrument_name).raw subscription - contains only the data payload",
+          "payload": {
+            "type": "object",
+            "description": "The actual notification data",
+            "additionalProperties": true
+          },
+          "examples": [
+            {
+              "name": "repeated",
+              "summary": "Repeated notification example",
+              "payload": {
+                "time_in_force": "good_til_cancelled",
+                "replaced": false,
+                "reduce_only": false,
+                "price": 10502.52,
+                "post_only": false,
+                "original_order_type": "market",
+                "order_type": "limit",
+                "order_state": "open",
+                "order_id": "5",
+                "max_show": 200,
+                "last_update_timestamp": 1581507423789,
+                "label": "",
+                "is_rebalance": false,
+                "is_liquidation": false,
+                "instrument_name": "BTC-PERPETUAL",
+                "filled_amount": 0,
+                "direction": "buy",
+                "creation_timestamp": 1581507423789,
+                "average_price": 0,
+                "api": false,
+                "amount": 200
+              }
+            }
+          ]
+        }
+      },
+      "tags": [
+        {
+          "name": "private"
+        },
+        {
+          "name": "orders"
+        }
+      ]
+    },
+    "user.orders.(instrument_name).(interval)": {
+      "address": "user.orders.(instrument_name).(interval)",
+      "title": "user.orders.(instrument_name).(interval) ",
+      "summary": "Get notifications about changes in user's orders for given instrument.",
+      "description": "",
+      "parameters": {
+        "instrument_name": {
+          "description": "The name of the instrument",
+          "examples": [
+            "BTC-PERPETUAL",
+            "ETH-PERPETUAL"
+          ]
+        },
+        "interval": {
+          "description": "Frequency of notifications",
+          "enum": [
+            "raw",
+            "100ms",
+            "agg2"
+          ],
+          "examples": [
+            "100ms",
+            "raw"
+          ]
+        }
+      },
+      "messages": {
+        "subscribe_request": {
+          "name": "subscribe_request",
+          "title": "Subscription Request",
+          "summary": "Client sends subscription request to subscribe to notification channel. Please refer to [Subscriptions page](/api-reference/subscription-management/public-subscribe) for more information.",
+          "description": "Request to subscribe to user channel. Channel name format: user.orders.(instrument_name).(interval)",
+          "payload": {
+            "properties": {},
+            "additionalProperties": false
+          },
+          "examples": [
+            {
+              "name": "subscribe_request_example",
+              "summary": "Subscription request example",
+              "payload": {
+                "jsonrpc": "2.0",
+                "method": "public/subscribe",
+                "id": 42,
+                "params": {
+                  "channels": [
+                    "user.orders.BTC-PERPETUAL.100ms"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "subscription_message": {
+          "name": "user_subscription_notification_data",
+          "title": "Subscription Notification Data",
+          "summary": "Server sends subscription notification data",
+          "description": "Message schema for user.orders.(instrument_name).(interval) subscription - contains only the data payload",
+          "payload": {
+            "type": "object",
+            "description": "The actual notification data",
+            "additionalProperties": true
+          },
+          "examples": [
+            {
+              "name": "repeated",
+              "summary": "Repeated notification example",
+              "payload": [
+                {
+                  "time_in_force": "good_til_cancelled",
+                  "replaced": false,
+                  "reduce_only": false,
+                  "price": 10460.43,
+                  "post_only": false,
+                  "original_order_type": "market",
+                  "order_type": "limit",
+                  "order_state": "open",
+                  "order_id": "4",
+                  "max_show": 200,
+                  "last_update_timestamp": 1581507159533,
+                  "label": "",
+                  "is_rebalance": false,
+                  "is_liquidation": false,
+                  "instrument_name": "BTC-PERPETUAL",
+                  "filled_amount": 0,
+                  "direction": "buy",
+                  "creation_timestamp": 1581507159533,
+                  "average_price": 0,
+                  "api": false,
+                  "amount": 200
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "tags": [
+        {
+          "name": "private"
+        },
+        {
+          "name": "orders"
+        }
+      ]
+    },
+    "user.orders.(kind).(currency).raw": {
+      "address": "user.orders.(kind).(currency).raw",
+      "title": "user.orders.(kind).(currency).raw ",
+      "summary": "Get notifications about changes in user's orders in instruments of a given kind and currency.",
+      "description": "",
+      "parameters": {
+        "kind": {
+          "description": "Instrument kind",
+          "enum": [
+            "future",
+            "option",
+            "spot",
+            "combo"
+          ],
+          "examples": [
+            "future",
+            "option"
+          ]
+        },
+        "currency": {
+          "description": "Currency code",
+          "enum": [
+            "BTC",
+            "ETH",
+            "USDC",
+            "USDT",
+            "any"
+          ],
+          "examples": [
+            "BTC",
+            "ETH"
+          ]
+        }
+      },
+      "messages": {
+        "subscribe_request": {
+          "name": "subscribe_request",
+          "title": "Subscription Request",
+          "summary": "Client sends subscription request to subscribe to notification channel. Please refer to [Subscriptions page](/api-reference/subscription-management/public-subscribe) for more information.",
+          "description": "Request to subscribe to user channel. Channel name format: user.orders.(kind).(currency).raw",
+          "payload": {
+            "properties": {},
+            "additionalProperties": false
+          },
+          "examples": [
+            {
+              "name": "subscribe_request_example",
+              "summary": "Subscription request example",
+              "payload": {
+                "jsonrpc": "2.0",
+                "method": "public/subscribe",
+                "id": 42,
+                "params": {
+                  "channels": [
+                    "user.orders.(kind).(currency).raw"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "subscription_message": {
+          "name": "user_subscription_notification_data",
+          "title": "Subscription Notification Data",
+          "summary": "Server sends subscription notification data",
+          "description": "Message schema for user.orders.(kind).(currency).raw subscription - contains only the data payload",
+          "payload": {
+            "type": "object",
+            "description": "The actual notification data",
+            "additionalProperties": true
+          },
+          "examples": [
+            {
+              "name": "repeated",
+              "summary": "Repeated notification example",
+              "payload": {
+                "time_in_force": "good_til_cancelled",
+                "replaced": false,
+                "reduce_only": false,
+                "price": 10542.68,
+                "post_only": false,
+                "original_order_type": "market",
+                "order_type": "limit",
+                "order_state": "open",
+                "order_id": "6",
+                "max_show": 200,
+                "last_update_timestamp": 1581507583024,
+                "label": "",
+                "is_rebalance": false,
+                "is_liquidation": false,
+                "instrument_name": "BTC-PERPETUAL",
+                "filled_amount": 0,
+                "direction": "buy",
+                "creation_timestamp": 1581507583024,
+                "average_price": 0,
+                "api": false,
+                "amount": 200
+              }
+            }
+          ]
+        }
+      },
+      "tags": [
+        {
+          "name": "private"
+        },
+        {
+          "name": "orders"
+        }
+      ]
+    },
+    "user.orders.(kind).(currency).(interval)": {
+      "address": "user.orders.(kind).(currency).(interval)",
+      "title": "user.orders.(kind).(currency).(interval) ",
+      "summary": "Get notifications about changes in user's orders in instruments of a given kind and currency.",
+      "description": "",
+      "parameters": {
+        "kind": {
+          "description": "Instrument kind",
+          "enum": [
+            "future",
+            "option",
+            "spot",
+            "combo"
+          ],
+          "examples": [
+            "future",
+            "option"
+          ]
+        },
+        "currency": {
+          "description": "Currency code",
+          "enum": [
+            "BTC",
+            "ETH",
+            "USDC",
+            "USDT",
+            "any"
+          ],
+          "examples": [
+            "BTC",
+            "ETH"
+          ]
+        },
+        "interval": {
+          "description": "Frequency of notifications",
+          "enum": [
+            "raw",
+            "100ms",
+            "agg2"
+          ],
+          "examples": [
+            "100ms",
+            "raw"
+          ]
+        }
+      },
+      "messages": {
+        "subscribe_request": {
+          "name": "subscribe_request",
+          "title": "Subscription Request",
+          "summary": "Client sends subscription request to subscribe to notification channel. Please refer to [Subscriptions page](/api-reference/subscription-management/public-subscribe) for more information.",
+          "description": "Request to subscribe to user channel. Channel name format: user.orders.(kind).(currency).(interval)",
+          "payload": {
+            "properties": {},
+            "additionalProperties": false
+          },
+          "examples": [
+            {
+              "name": "subscribe_request_example",
+              "summary": "Subscription request example",
+              "payload": {
+                "jsonrpc": "2.0",
+                "method": "public/subscribe",
+                "id": 42,
+                "params": {
+                  "channels": [
+                    "user.orders.(kind).(currency).100ms"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "subscription_message": {
+          "name": "user_subscription_notification_data",
+          "title": "Subscription Notification Data",
+          "summary": "Server sends subscription notification data",
+          "description": "Message schema for user.orders.(kind).(currency).(interval) subscription - contains only the data payload",
+          "payload": {
+            "type": "object",
+            "description": "The actual notification data",
+            "additionalProperties": true
+          },
+          "examples": [
+            {
+              "name": "repeated",
+              "summary": "Repeated notification example",
+              "payload": [
+                {
+                  "time_in_force": "good_til_cancelled",
+                  "reduce_only": false,
+                  "price": 3928.5,
+                  "post_only": false,
+                  "order_type": "limit",
+                  "order_state": "open",
+                  "order_id": "476137",
+                  "max_show": 120,
+                  "last_update_timestamp": 1550826337209,
+                  "label": "",
+                  "is_rebalance": false,
+                  "is_liquidation": false,
+                  "instrument_name": "BTC-PERPETUAL",
+                  "filled_amount": 0,
+                  "direction": "buy",
+                  "creation_timestamp": 1550826337209,
+                  "average_price": 0,
+                  "api": false,
+                  "amount": 120
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "tags": [
+        {
+          "name": "private"
+        },
+        {
+          "name": "orders"
+        }
+      ]
+    },
+    "user.changes.(instrument_name).(interval)": {
+      "address": "user.changes.(instrument_name).(interval)",
+      "title": "user.changes.(instrument_name).(interval) ",
+      "summary": "Get notifications about the user's updates related to order, trades, etc. in an instrument.",
+      "description": "",
+      "parameters": {
+        "instrument_name": {
+          "description": "The name of the instrument",
+          "examples": [
+            "BTC-PERPETUAL",
+            "ETH-PERPETUAL"
+          ]
+        },
+        "interval": {
+          "description": "Frequency of notifications",
+          "enum": [
+            "raw",
+            "100ms",
+            "agg2"
+          ],
+          "examples": [
+            "100ms",
+            "raw"
+          ]
+        }
+      },
+      "messages": {
+        "subscribe_request": {
+          "name": "subscribe_request",
+          "title": "Subscription Request",
+          "summary": "Client sends subscription request to subscribe to notification channel. Please refer to [Subscriptions page](/api-reference/subscription-management/public-subscribe) for more information.",
+          "description": "Request to subscribe to user channel. Channel name format: user.changes.(instrument_name).(interval)",
+          "payload": {
+            "properties": {},
+            "additionalProperties": false
+          },
+          "examples": [
+            {
+              "name": "subscribe_request_example",
+              "summary": "Subscription request example",
+              "payload": {
+                "jsonrpc": "2.0",
+                "method": "public/subscribe",
+                "id": 42,
+                "params": {
+                  "channels": [
+                    "user.changes.BTC-PERPETUAL.100ms"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "subscription_message": {
+          "name": "user_subscription_notification_data",
+          "title": "Subscription Notification Data",
+          "summary": "Server sends subscription notification data",
+          "description": "Message schema for user.changes.(instrument_name).(interval) subscription - contains only the data payload",
+          "payload": {
+            "type": "object",
+            "description": "The actual notification data",
+            "additionalProperties": true
+          },
+          "examples": [
+            {
+              "name": "repeated",
+              "summary": "Repeated notification example",
+              "payload": {
+                "trades": [
+                  {
+                    "trade_seq": 866638,
+                    "trade_id": "1430914",
+                    "timestamp": 1605780344032,
+                    "tick_direction": 1,
+                    "state": "filled",
+                    "reduce_only": false,
+                    "profit_loss": 4.898e-05,
+                    "price": 17391,
+                    "post_only": false,
+                    "order_type": "market",
+                    "order_id": "3398016",
+                    "matching_id": null,
+                    "mark_price": 17391,
+                    "liquidity": "T",
+                    "instrument_name": "BTC-PERPETUAL",
+                    "index_price": 17501.88,
+                    "fee_currency": "BTC",
+                    "fee": 1.6e-07,
+                    "direction": "sell",
+                    "amount": 10
+                  }
+                ],
+                "positions": [
+                  {
+                    "total_profit_loss": 1.69711368,
+                    "size_currency": 10.646886321,
+                    "size": 185160,
+                    "settlement_price": 16025.83,
+                    "realized_profit_loss": 0.012454598,
+                    "realized_funding": 0.01235663,
+                    "mark_price": 17391,
+                    "maintenance_margin": 0.234575865,
+                    "leverage": 33,
+                    "kind": "future",
+                    "interest_value": 1.7362511643080387,
+                    "instrument_name": "BTC-PERPETUAL",
+                    "initial_margin": 0.319750953,
+                    "index_price": 17501.88,
+                    "floating_profit_loss": 0.906961435,
+                    "direction": "buy",
+                    "delta": 10.646886321,
+                    "average_price": 15000
+                  }
+                ],
+                "orders": [
+                  {
+                    "web": true,
+                    "time_in_force": "good_til_cancelled",
+                    "replaced": false,
+                    "reduce_only": false,
+                    "price": 15665.5,
+                    "post_only": false,
+                    "order_type": "market",
+                    "order_state": "filled",
+                    "order_id": "3398016",
+                    "max_show": 10,
+                    "last_update_timestamp": 1605780344032,
+                    "label": "",
+                    "is_rebalance": false,
+                    "is_liquidation": false,
+                    "instrument_name": "BTC-PERPETUAL",
+                    "filled_amount": 10,
+                    "direction": "sell",
+                    "creation_timestamp": 1605780344032,
+                    "average_price": 17391,
+                    "api": false,
+                    "amount": 10
+                  }
+                ],
+                "instrument_name": "BTC-PERPETUAL"
+              }
+            }
+          ]
+        }
+      },
+      "tags": [
+        {
+          "name": "private"
+        }
+      ]
+    },
+    "user.changes.(kind).(currency).(interval)": {
+      "address": "user.changes.(kind).(currency).(interval)",
+      "title": "user.changes.(kind).(currency).(interval) ",
+      "summary": "Get notifications about changes in user's updates related to order, trades, etc. in instruments of a given kind and currency.",
+      "description": "",
+      "parameters": {
+        "kind": {
+          "description": "Instrument kind",
+          "enum": [
+            "future",
+            "option",
+            "spot",
+            "combo"
+          ],
+          "examples": [
+            "future",
+            "option"
+          ]
+        },
+        "currency": {
+          "description": "Currency code",
+          "enum": [
+            "BTC",
+            "ETH",
+            "USDC",
+            "USDT",
+            "any"
+          ],
+          "examples": [
+            "BTC",
+            "ETH"
+          ]
+        },
+        "interval": {
+          "description": "Frequency of notifications",
+          "enum": [
+            "raw",
+            "100ms",
+            "agg2"
+          ],
+          "examples": [
+            "100ms",
+            "raw"
+          ]
+        }
+      },
+      "messages": {
+        "subscribe_request": {
+          "name": "subscribe_request",
+          "title": "Subscription Request",
+          "summary": "Client sends subscription request to subscribe to notification channel. Please refer to [Subscriptions page](/api-reference/subscription-management/public-subscribe) for more information.",
+          "description": "Request to subscribe to user channel. Channel name format: user.changes.(kind).(currency).(interval)",
+          "payload": {
+            "properties": {},
+            "additionalProperties": false
+          },
+          "examples": [
+            {
+              "name": "subscribe_request_example",
+              "summary": "Subscription request example",
+              "payload": {
+                "jsonrpc": "2.0",
+                "method": "public/subscribe",
+                "id": 42,
+                "params": {
+                  "channels": [
+                    "user.changes.(kind).(currency).100ms"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "subscription_message": {
+          "name": "user_subscription_notification_data",
+          "title": "Subscription Notification Data",
+          "summary": "Server sends subscription notification data",
+          "description": "Message schema for user.changes.(kind).(currency).(interval) subscription - contains only the data payload",
+          "payload": {
+            "type": "object",
+            "description": "The actual notification data",
+            "additionalProperties": true
+          },
+          "examples": [
+            {
+              "name": "repeated",
+              "summary": "Repeated notification example",
+              "payload": {
+                "trades": [
+                  {
+                    "trade_seq": 866638,
+                    "trade_id": "1430914",
+                    "timestamp": 1605780344032,
+                    "tick_direction": 1,
+                    "state": "filled",
+                    "reduce_only": false,
+                    "profit_loss": 4.898e-05,
+                    "price": 17391,
+                    "post_only": false,
+                    "order_type": "market",
+                    "order_id": "3398016",
+                    "matching_id": null,
+                    "mark_price": 17391,
+                    "liquidity": "T",
+                    "instrument_name": "BTC-PERPETUAL",
+                    "index_price": 17501.88,
+                    "fee_currency": "BTC",
+                    "fee": 1.6e-07,
+                    "direction": "sell",
+                    "amount": 10
+                  }
+                ],
+                "positions": [
+                  {
+                    "total_profit_loss": 1.69711368,
+                    "size_currency": 10.646886321,
+                    "size": 185160,
+                    "settlement_price": 16025.83,
+                    "realized_profit_loss": 0.012454598,
+                    "realized_funding": 0.01235663,
+                    "mark_price": 17391,
+                    "maintenance_margin": 0.234575865,
+                    "leverage": 33,
+                    "kind": "future",
+                    "interest_value": 1.7362511643080387,
+                    "instrument_name": "BTC-PERPETUAL",
+                    "initial_margin": 0.319750953,
+                    "index_price": 17501.88,
+                    "floating_profit_loss": 0.906961435,
+                    "direction": "buy",
+                    "delta": 10.646886321,
+                    "average_price": 15000
+                  }
+                ],
+                "orders": [
+                  {
+                    "web": true,
+                    "time_in_force": "good_til_cancelled",
+                    "replaced": false,
+                    "reduce_only": false,
+                    "price": 15665.5,
+                    "post_only": false,
+                    "order_type": "market",
+                    "order_state": "filled",
+                    "order_id": "3398016",
+                    "max_show": 10,
+                    "last_update_timestamp": 1605780344032,
+                    "label": "",
+                    "is_rebalance": false,
+                    "is_liquidation": false,
+                    "instrument_name": "BTC-PERPETUAL",
+                    "filled_amount": 10,
+                    "direction": "sell",
+                    "creation_timestamp": 1605780344032,
+                    "average_price": 17391,
+                    "api": false,
+                    "amount": 10
+                  }
+                ],
+                "instrument_name": "BTC-PERPETUAL"
+              }
+            }
+          ]
+        }
+      },
+      "tags": [
+        {
+          "name": "private"
+        }
+      ]
+    },
+    "user.access_log": {
+      "address": "user.access_log",
+      "title": "user.access_log ",
+      "summary": "Get notifications about security events related to the account",
+      "description": "",
+      "parameters": {},
+      "messages": {
+        "subscribe_request": {
+          "name": "subscribe_request",
+          "title": "Subscription Request",
+          "summary": "Client sends subscription request to subscribe to notification channel. Please refer to [Subscriptions page](/api-reference/subscription-management/public-subscribe) for more information.",
+          "description": "Request to subscribe to user.access_log channel. This channel does not require any additional parameters.",
+          "payload": {
+            "properties": {},
+            "additionalProperties": false
+          },
+          "examples": [
+            {
+              "name": "subscribe_request_example",
+              "summary": "Subscription request example",
+              "payload": {
+                "jsonrpc": "2.0",
+                "method": "public/subscribe",
+                "id": 42,
+                "params": {
+                  "channels": [
+                    "user.access_log"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "subscription_message": {
+          "name": "user_subscription_notification_data",
+          "title": "Subscription Notification Data",
+          "summary": "Server sends subscription notification data",
+          "description": "Message schema for user.access_log subscription - contains only the data payload",
+          "payload": {
+            "type": "object",
+            "description": "The actual notification data",
+            "additionalProperties": true
+          },
+          "examples": [
+            {
+              "name": "repeated",
+              "summary": "Repeated notification example",
+              "payload": {
+                "timestamp": 1632488963633,
+                "log": "success",
+                "ip": "8.9.10.11",
+                "id": 243343,
+                "country": "China",
+                "city": "Pekin"
+              }
+            }
+          ]
+        }
+      },
+      "tags": [
+        {
+          "name": "private"
+        }
+      ]
+    },
+    "user.lock": {
+      "address": "user.lock",
+      "title": "user.lock ",
+      "summary": "Get notification when account is locked/unlocked",
+      "description": "",
+      "parameters": {},
+      "messages": {
+        "subscribe_request": {
+          "name": "subscribe_request",
+          "title": "Subscription Request",
+          "summary": "Client sends subscription request to subscribe to notification channel. Please refer to [Subscriptions page](/api-reference/subscription-management/public-subscribe) for more information.",
+          "description": "Request to subscribe to user.lock channel. This channel does not require any additional parameters.",
+          "payload": {
+            "properties": {},
+            "additionalProperties": false
+          },
+          "examples": [
+            {
+              "name": "subscribe_request_example",
+              "summary": "Subscription request example",
+              "payload": {
+                "jsonrpc": "2.0",
+                "method": "public/subscribe",
+                "id": 42,
+                "params": {
+                  "channels": [
+                    "user.lock"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "subscription_message": {
+          "name": "user_subscription_notification_data",
+          "title": "Subscription Notification Data",
+          "summary": "Server sends subscription notification data",
+          "description": "Message schema for user.lock subscription - contains only the data payload",
+          "payload": {
+            "type": "object",
+            "description": "The actual notification data",
+            "additionalProperties": true
+          },
+          "examples": [
+            {
+              "name": "repeated",
+              "summary": "Repeated notification example",
+              "payload": {
+                "locked": true,
+                "currency": "ALL"
+              }
+            }
+          ]
+        }
+      },
+      "tags": [
+        {
+          "name": "private"
+        }
+      ]
+    },
+    "block_rfq.maker.(currency)": {
+      "address": "block_rfq.maker.(currency)",
+      "title": "block_rfq.maker.(currency) ",
+      "summary": "Get notification when new Block RFQ is created",
+      "description": "",
+      "parameters": {
+        "currency": {
+          "description": "Currency code",
+          "enum": [
+            "BTC",
+            "ETH",
+            "USDC",
+            "USDT",
+            "any"
+          ],
+          "examples": [
+            "BTC",
+            "ETH"
+          ]
+        }
+      },
+      "messages": {
+        "subscribe_request": {
+          "name": "subscribe_request",
+          "title": "Subscription Request",
+          "summary": "Client sends subscription request to subscribe to notification channel. Please refer to [Subscriptions page](/api-reference/subscription-management/public-subscribe) for more information.",
+          "description": "Request to subscribe to block_rfq channel. Channel name format: block_rfq.maker.(currency)",
+          "payload": {
+            "properties": {},
+            "additionalProperties": false
+          },
+          "examples": [
+            {
+              "name": "subscribe_request_example",
+              "summary": "Subscription request example",
+              "payload": {
+                "jsonrpc": "2.0",
+                "method": "public/subscribe",
+                "id": 42,
+                "params": {
+                  "channels": [
+                    "block_rfq.maker.(currency)"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "subscription_message": {
+          "name": "block_rfq_subscription_notification_data",
+          "title": "Subscription Notification Data",
+          "summary": "Server sends subscription notification data",
+          "description": "Message schema for block_rfq.maker.(currency) subscription - contains only the data payload",
+          "payload": {
+            "type": "object",
+            "description": "The actual notification data",
+            "additionalProperties": true
+          },
+          "examples": [
+            {
+              "name": "repeated",
+              "summary": "Repeated notification example",
+              "payload": {
+                "state": "open",
+                "combo_id": "BTC-18NOV24-82000-C",
+                "legs": [
+                  {
+                    "direction": "buy",
+                    "instrument_name": "BTC-18NOV24-82000-C",
+                    "ratio": 1
+                  }
+                ],
+                "amount": 25,
+                "role": "maker",
+                "expiration_timestamp": 1731664976443,
+                "block_rfq_id": 722,
+                "creation_timestamp": 1731664676443,
+                "taker_rating": "1-2",
+                "disclosed": true,
+                "taker": "TAKER1"
+              }
+            }
+          ]
+        }
+      },
+      "tags": [
+        {
+          "name": "private"
+        },
+        {
+          "name": "block-trading"
+        }
+      ]
+    },
+    "block_rfq.taker.(currency)": {
+      "address": "block_rfq.taker.(currency)",
+      "title": "block_rfq.taker.(currency) ",
+      "summary": "Get notification about state of your Block RFQ. `trades` are only visible if the Block RFQ was filled. Please note that after Block RFQ creation, a grace period of 5 seconds begins, during which the taker cannot see quotes or trade the Block RFQ.",
+      "description": "",
+      "parameters": {
+        "currency": {
+          "description": "Currency code",
+          "enum": [
+            "BTC",
+            "ETH",
+            "USDC",
+            "USDT",
+            "any"
+          ],
+          "examples": [
+            "BTC",
+            "ETH"
+          ]
+        }
+      },
+      "messages": {
+        "subscribe_request": {
+          "name": "subscribe_request",
+          "title": "Subscription Request",
+          "summary": "Client sends subscription request to subscribe to notification channel. Please refer to [Subscriptions page](/api-reference/subscription-management/public-subscribe) for more information.",
+          "description": "Request to subscribe to block_rfq channel. Channel name format: block_rfq.taker.(currency)",
+          "payload": {
+            "properties": {},
+            "additionalProperties": false
+          },
+          "examples": [
+            {
+              "name": "subscribe_request_example",
+              "summary": "Subscription request example",
+              "payload": {
+                "jsonrpc": "2.0",
+                "method": "public/subscribe",
+                "id": 42,
+                "params": {
+                  "channels": [
+                    "block_rfq.taker.(currency)"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "subscription_message": {
+          "name": "block_rfq_subscription_notification_data",
+          "title": "Subscription Notification Data",
+          "summary": "Server sends subscription notification data",
+          "description": "Message schema for block_rfq.taker.(currency) subscription - contains only the data payload",
+          "payload": {
+            "type": "object",
+            "description": "The actual notification data",
+            "additionalProperties": true
+          },
+          "examples": [
+            {
+              "name": "repeated",
+              "summary": "Repeated notification example",
+              "payload": {
+                "label": "example",
+                "state": "open",
+                "amount": 10000,
+                "role": "taker",
+                "bids": [
+                  {
+                    "amount": 10000,
+                    "price": 291664.14,
+                    "makers": [
+                      "ANONYMOUS"
+                    ],
+                    "last_update_timestamp": 1740047910507,
+                    "execution_instruction": "any_part_of"
+                  }
+                ],
+                "asks": [],
+                "combo_id": null,
+                "legs": [
+                  {
+                    "direction": "buy",
+                    "instrument_name": "BTC-21FEB25",
+                    "ratio": 1
+                  },
+                  {
+                    "direction": "buy",
+                    "instrument_name": "BTC-28FEB25",
+                    "ratio": 1
+                  },
+                  {
+                    "direction": "buy",
+                    "instrument_name": "BTC-PERPETUAL",
+                    "ratio": 1
+                  }
+                ],
+                "min_trade_amount": 10,
+                "makers": [
+                  "MAKER1",
+                  "MAKER2"
+                ],
+                "creation_timestamp": 1740047910438,
+                "block_rfq_id": 321,
+                "expiration_timestamp": 1740048210438,
+                "taker_rating": "1-2",
+                "disclosed": true,
+                "taker": "TAKER1"
+              }
+            }
+          ]
+        }
+      },
+      "tags": [
+        {
+          "name": "private"
+        },
+        {
+          "name": "block-trading"
+        }
+      ]
+    },
+    "block_rfq.maker.quotes.(currency)": {
+      "address": "block_rfq.maker.quotes.(currency)",
+      "title": "block_rfq.maker.quotes.(currency) ",
+      "summary": "Get notification about state of your Block RFQ quotes",
+      "description": "",
+      "parameters": {
+        "currency": {
+          "description": "Currency code",
+          "enum": [
+            "BTC",
+            "ETH",
+            "USDC",
+            "USDT",
+            "any"
+          ],
+          "examples": [
+            "BTC",
+            "ETH"
+          ]
+        }
+      },
+      "messages": {
+        "subscribe_request": {
+          "name": "subscribe_request",
+          "title": "Subscription Request",
+          "summary": "Client sends subscription request to subscribe to notification channel. Please refer to [Subscriptions page](/api-reference/subscription-management/public-subscribe) for more information.",
+          "description": "Request to subscribe to block_rfq channel. Channel name format: block_rfq.maker.quotes.(currency)",
+          "payload": {
+            "properties": {},
+            "additionalProperties": false
+          },
+          "examples": [
+            {
+              "name": "subscribe_request_example",
+              "summary": "Subscription request example",
+              "payload": {
+                "jsonrpc": "2.0",
+                "method": "public/subscribe",
+                "id": 42,
+                "params": {
+                  "channels": [
+                    "block_rfq.maker.quotes.(currency)"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "subscription_message": {
+          "name": "block_rfq_subscription_notification_data",
+          "title": "Subscription Notification Data",
+          "summary": "Server sends subscription notification data",
+          "description": "Message schema for block_rfq.maker.quotes.(currency) subscription - contains only the data payload",
+          "payload": {
+            "type": "object",
+            "description": "The actual notification data",
+            "additionalProperties": true
+          },
+          "examples": [
+            {
+              "name": "repeated",
+              "summary": "Repeated notification example",
+              "payload": [
+                {
+                  "label": "example_quote",
+                  "price": 10,
+                  "direction": "buy",
+                  "legs": [
+                    {
+                      "price": 10,
+                      "direction": "buy",
+                      "instrument_name": "BTC-16NOV24-82000-C",
+                      "ratio": 1
+                    }
+                  ],
+                  "amount": 25,
+                  "block_rfq_id": 724,
+                  "replaced": false,
+                  "filled_amount": 0,
+                  "last_update_timestamp": 1731665928291,
+                  "creation_timestamp": 1731665928291,
+                  "block_rfq_quote_id": 1301,
+                  "quote_state": "open"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "tags": [
+        {
+          "name": "private"
+        },
+        {
+          "name": "block-trading"
+        }
+      ]
+    },
+    "block_rfq.trades.(currency)": {
+      "address": "block_rfq.trades.(currency)",
+      "title": "block_rfq.trades.(currency) ",
+      "summary": "Get notification about recent Block RFQ trades",
+      "description": "",
+      "parameters": {
+        "currency": {
+          "description": "Currency code",
+          "enum": [
+            "BTC",
+            "ETH",
+            "USDC",
+            "USDT",
+            "any"
+          ],
+          "examples": [
+            "BTC",
+            "ETH"
+          ]
+        }
+      },
+      "messages": {
+        "subscribe_request": {
+          "name": "subscribe_request",
+          "title": "Subscription Request",
+          "summary": "Client sends subscription request to subscribe to notification channel. Please refer to [Subscriptions page](/api-reference/subscription-management/public-subscribe) for more information.",
+          "description": "Request to subscribe to block_rfq channel. Channel name format: block_rfq.trades.(currency)",
+          "payload": {
+            "properties": {},
+            "additionalProperties": false
+          },
+          "examples": [
+            {
+              "name": "subscribe_request_example",
+              "summary": "Subscription request example",
+              "payload": {
+                "jsonrpc": "2.0",
+                "method": "public/subscribe",
+                "id": 42,
+                "params": {
+                  "channels": [
+                    "block_rfq.trades.(currency)"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "subscription_message": {
+          "name": "block_rfq_subscription_notification_data",
+          "title": "Subscription Notification Data",
+          "summary": "Server sends subscription notification data",
+          "description": "Message schema for block_rfq.trades.(currency) subscription - contains only the data payload",
+          "payload": {
+            "type": "object",
+            "description": "The actual notification data",
+            "additionalProperties": true
+          },
+          "examples": [
+            {
+              "name": "repeated",
+              "summary": "Repeated notification example",
+              "payload": {
+                "id": 939,
+                "timestamp": 1739869829823,
+                "amount": 50,
+                "direction": "sell",
+                "combo_id": "BTC-PERPETUAL",
+                "legs": [
+                  {
+                    "direction": "buy",
+                    "price": 95318.72,
+                    "instrument_name": "BTC-PERPETUAL",
+                    "ratio": 1
+                  }
+                ],
+                "trades": [
+                  {
+                    "amount": 50,
+                    "direction": "sell",
+                    "price": 95318.72
+                  }
+                ],
+                "mark_price": 95318.72
+              }
+            }
+          ]
+        }
+      },
+      "tags": [
+        {
+          "name": "trades"
+        }
+      ]
+    }
+  },
+  "operations": {
+    "send_subscribe_platform_state": {
+      "title": "Send subscribe request",
+      "summary": "Client sends subscription request for platform_state",
+      "description": "Send a subscription request to receive platform_state notifications. This channel does not require any additional parameters.",
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/platform_state.public_methods_state"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/platform_state.public_methods_state/messages/subscription_message"
+        }
+      ],
+      "tags": [
+        {
+          "name": "platform"
+        }
+      ]
+    },
+    "receive_platform_state": {
+      "title": "Receive platform_state",
+      "summary": "Client receives platform_state notifications",
+      "description": "Receive platform_state notifications from the server",
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/platform_state.public_methods_state"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/platform_state.public_methods_state/messages/subscribe_request"
+        }
+      ],
+      "tags": [
+        {
+          "name": "platform"
+        }
+      ]
+    },
+    "send_subscribe_announcements": {
+      "title": "Send subscribe request",
+      "summary": "Client sends subscription request for announcements",
+      "description": "Send a subscription request to receive announcements notifications. This channel does not require any additional parameters.",
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/announcements"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/announcements/messages/subscription_message"
+        }
+      ],
+      "tags": [
+        {
+          "name": "announcements"
+        }
+      ]
+    },
+    "receive_announcements": {
+      "title": "Receive announcements",
+      "summary": "Client receives announcements notifications",
+      "description": "Receive announcements notifications from the server",
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/announcements"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/announcements/messages/subscribe_request"
+        }
+      ],
+      "tags": [
+        {
+          "name": "announcements"
+        }
+      ]
+    },
+    "send_subscribe_book": {
+      "title": "Send subscribe request for order book",
+      "summary": "Client sends subscription request for order book updates",
+      "description": "Send a subscription request to receive order book updates for a specific instrument with specified interval",
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/book.(instrument_name).(group).(depth).(interval)"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/book.(instrument_name).(group).(depth).(interval)/messages/subscription_message"
+        }
+      ],
+      "tags": [
+        {
+          "name": "orderbook"
+        }
+      ]
+    },
+    "receive_book_updates": {
+      "title": "Receive order book updates",
+      "summary": "Client receives order book update notifications",
+      "description": "Receive order book update notifications from the server for the subscribed instrument",
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/book.(instrument_name).(group).(depth).(interval)"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/book.(instrument_name).(group).(depth).(interval)/messages/subscribe_request"
+        }
+      ],
+      "tags": [
+        {
+          "name": "orderbook"
+        }
+      ]
+    },
+    "send_subscribe_ticker": {
+      "title": "Send subscribe request for ticker",
+      "summary": "Client sends subscription request for ticker updates",
+      "description": "Send a subscription request to receive ticker updates for a specific instrument with specified interval",
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/ticker.(instrument_name).(interval)"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/ticker.(instrument_name).(interval)/messages/subscription_message"
+        }
+      ],
+      "tags": [
+        {
+          "name": "market-data"
+        }
+      ]
+    },
+    "receive_ticker_updates": {
+      "title": "Receive ticker updates",
+      "summary": "Client receives ticker update notifications",
+      "description": "Receive ticker update notifications from the server for the subscribed instrument",
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/ticker.(instrument_name).(interval)"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/ticker.(instrument_name).(interval)/messages/subscribe_request"
+        }
+      ],
+      "tags": [
+        {
+          "name": "market-data"
+        }
+      ]
+    },
+    "send_subscribe_incremental_ticker": {
+      "title": "Send subscribe request for incremental_ticker",
+      "summary": "Client sends subscription request for incremental_ticker updates",
+      "description": "Send a subscription request to receive incremental_ticker updates for a specific instrument with specified interval",
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/incremental_ticker.(instrument_name)"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/incremental_ticker.(instrument_name)/messages/subscription_message"
+        }
+      ],
+      "tags": [
+        {
+          "name": "market-data"
+        }
+      ]
+    },
+    "receive_incremental_ticker_updates": {
+      "title": "Receive incremental_ticker updates",
+      "summary": "Client receives incremental_ticker update notifications",
+      "description": "Receive incremental_ticker update notifications from the server for the subscribed instrument",
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/incremental_ticker.(instrument_name)"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/incremental_ticker.(instrument_name)/messages/subscribe_request"
+        }
+      ],
+      "tags": [
+        {
+          "name": "market-data"
+        }
+      ]
+    },
+    "send_subscribe_perpetual": {
+      "title": "Send subscribe request for perpetual",
+      "summary": "Client sends subscription request for perpetual updates",
+      "description": "Send a subscription request to receive perpetual updates for a specific instrument with specified interval",
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/perpetual.(instrument_name).(interval)"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/perpetual.(instrument_name).(interval)/messages/subscription_message"
+        }
+      ]
+    },
+    "receive_perpetual_updates": {
+      "title": "Receive perpetual updates",
+      "summary": "Client receives perpetual update notifications",
+      "description": "Receive perpetual update notifications from the server for the subscribed instrument",
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/perpetual.(instrument_name).(interval)"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/perpetual.(instrument_name).(interval)/messages/subscribe_request"
+        }
+      ]
+    },
+    "send_subscribe_quote": {
+      "title": "Send subscribe request for quote",
+      "summary": "Client sends subscription request for quote updates",
+      "description": "Send a subscription request to receive quote updates for a specific instrument with specified interval",
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/quote.(instrument_name)"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/quote.(instrument_name)/messages/subscription_message"
+        }
+      ]
+    },
+    "receive_quote_updates": {
+      "title": "Receive quote updates",
+      "summary": "Client receives quote update notifications",
+      "description": "Receive quote update notifications from the server for the subscribed instrument",
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/quote.(instrument_name)"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/quote.(instrument_name)/messages/subscribe_request"
+        }
+      ]
+    },
+    "send_subscribe_trades": {
+      "title": "Send subscribe request for trades",
+      "summary": "Client sends subscription request for trades updates",
+      "description": "Send a subscription request to receive trades updates for a specific instrument with specified interval",
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/trades.(kind).(currency).(interval)"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/trades.(kind).(currency).(interval)/messages/subscription_message"
+        }
+      ],
+      "tags": [
+        {
+          "name": "trades"
+        }
+      ]
+    },
+    "receive_trades_updates": {
+      "title": "Receive trades updates",
+      "summary": "Client receives trades update notifications",
+      "description": "Receive trades update notifications from the server for the subscribed instrument",
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/trades.(kind).(currency).(interval)"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/trades.(kind).(currency).(interval)/messages/subscribe_request"
+        }
+      ],
+      "tags": [
+        {
+          "name": "trades"
+        }
+      ]
+    },
+    "send_subscribe_block_trade_confirmations": {
+      "title": "Send subscribe request for block_trade_confirmations",
+      "summary": "Client sends subscription request for block_trade_confirmations updates",
+      "description": "Send a subscription request to receive block_trade_confirmations updates for a specific instrument with specified interval",
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/block_trade_confirmations.(currency)"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/block_trade_confirmations.(currency)/messages/subscription_message"
+        }
+      ]
+    },
+    "receive_block_trade_confirmations": {
+      "title": "Receive block_trade_confirmations",
+      "summary": "Client receives block_trade_confirmations notifications",
+      "description": "Receive block_trade_confirmations notifications from the server",
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/block_trade_confirmations"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/block_trade_confirmations/messages/subscribe_request"
+        }
+      ]
+    },
+    "receive_block_trade_confirmations_updates": {
+      "title": "Receive block_trade_confirmations updates",
+      "summary": "Client receives block_trade_confirmations update notifications",
+      "description": "Receive block_trade_confirmations update notifications from the server for the subscribed instrument",
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/block_trade_confirmations.(currency)"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/block_trade_confirmations.(currency)/messages/subscribe_request"
+        }
+      ]
+    },
+    "send_subscribe_deribit_price_index": {
+      "title": "Send subscribe request for deribit_price_index",
+      "summary": "Client sends subscription request for deribit_price_index updates",
+      "description": "Send a subscription request to receive deribit_price_index updates for a specific instrument with specified interval",
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/deribit_price_index.(index_name)"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/deribit_price_index.(index_name)/messages/subscription_message"
+        }
+      ],
+      "tags": [
+        {
+          "name": "indices"
+        }
+      ]
+    },
+    "receive_deribit_price_index_updates": {
+      "title": "Receive deribit_price_index updates",
+      "summary": "Client receives deribit_price_index update notifications",
+      "description": "Receive deribit_price_index update notifications from the server for the subscribed instrument",
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/deribit_price_index.(index_name)"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/deribit_price_index.(index_name)/messages/subscribe_request"
+        }
+      ],
+      "tags": [
+        {
+          "name": "indices"
+        }
+      ]
+    },
+    "send_subscribe_deribit_price_ranking": {
+      "title": "Send subscribe request for deribit_price_ranking",
+      "summary": "Client sends subscription request for deribit_price_ranking updates",
+      "description": "Send a subscription request to receive deribit_price_ranking updates for a specific instrument with specified interval",
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/deribit_price_ranking.(index_name)"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/deribit_price_ranking.(index_name)/messages/subscription_message"
+        }
+      ],
+      "tags": [
+        {
+          "name": "indices"
+        }
+      ]
+    },
+    "receive_deribit_price_ranking_updates": {
+      "title": "Receive deribit_price_ranking updates",
+      "summary": "Client receives deribit_price_ranking update notifications",
+      "description": "Receive deribit_price_ranking update notifications from the server for the subscribed instrument",
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/deribit_price_ranking.(index_name)"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/deribit_price_ranking.(index_name)/messages/subscribe_request"
+        }
+      ],
+      "tags": [
+        {
+          "name": "indices"
+        }
+      ]
+    },
+    "send_subscribe_deribit_price_statistics": {
+      "title": "Send subscribe request for deribit_price_statistics",
+      "summary": "Client sends subscription request for deribit_price_statistics updates",
+      "description": "Send a subscription request to receive deribit_price_statistics updates for a specific instrument with specified interval",
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/deribit_price_statistics.(index_name)"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/deribit_price_statistics.(index_name)/messages/subscription_message"
+        }
+      ],
+      "tags": [
+        {
+          "name": "indices"
+        }
+      ]
+    },
+    "receive_deribit_price_statistics_updates": {
+      "title": "Receive deribit_price_statistics updates",
+      "summary": "Client receives deribit_price_statistics update notifications",
+      "description": "Receive deribit_price_statistics update notifications from the server for the subscribed instrument",
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/deribit_price_statistics.(index_name)"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/deribit_price_statistics.(index_name)/messages/subscribe_request"
+        }
+      ],
+      "tags": [
+        {
+          "name": "indices"
+        }
+      ]
+    },
+    "send_subscribe_deribit_volatility_index": {
+      "title": "Send subscribe request for deribit_volatility_index",
+      "summary": "Client sends subscription request for deribit_volatility_index updates",
+      "description": "Send a subscription request to receive deribit_volatility_index updates for a specific instrument with specified interval",
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/deribit_volatility_index.(index_name)"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/deribit_volatility_index.(index_name)/messages/subscription_message"
+        }
+      ]
+    },
+    "receive_deribit_volatility_index_updates": {
+      "title": "Receive deribit_volatility_index updates",
+      "summary": "Client receives deribit_volatility_index update notifications",
+      "description": "Receive deribit_volatility_index update notifications from the server for the subscribed instrument",
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/deribit_volatility_index.(index_name)"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/deribit_volatility_index.(index_name)/messages/subscribe_request"
+        }
+      ]
+    },
+    "send_subscribe_markprice": {
+      "title": "Send subscribe request for markprice",
+      "summary": "Client sends subscription request for markprice updates",
+      "description": "Send a subscription request to receive markprice updates for a specific instrument with specified interval",
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/markprice.options.(index_name)"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/markprice.options.(index_name)/messages/subscription_message"
+        }
+      ]
+    },
+    "receive_markprice_updates": {
+      "title": "Receive markprice updates",
+      "summary": "Client receives markprice update notifications",
+      "description": "Receive markprice update notifications from the server for the subscribed instrument",
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/markprice.options.(index_name)"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/markprice.options.(index_name)/messages/subscribe_request"
+        }
+      ]
+    },
+    "send_subscribe_estimated_expiration_price": {
+      "title": "Send subscribe request for estimated_expiration_price",
+      "summary": "Client sends subscription request for estimated_expiration_price updates",
+      "description": "Send a subscription request to receive estimated_expiration_price updates for a specific instrument with specified interval",
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/estimated_expiration_price.(index_name)"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/estimated_expiration_price.(index_name)/messages/subscription_message"
+        }
+      ]
+    },
+    "receive_estimated_expiration_price_updates": {
+      "title": "Receive estimated_expiration_price updates",
+      "summary": "Client receives estimated_expiration_price update notifications",
+      "description": "Receive estimated_expiration_price update notifications from the server for the subscribed instrument",
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/estimated_expiration_price.(index_name)"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/estimated_expiration_price.(index_name)/messages/subscribe_request"
+        }
+      ]
+    },
+    "send_subscribe_chart": {
+      "title": "Send subscribe request for chart",
+      "summary": "Client sends subscription request for chart updates",
+      "description": "Send a subscription request to receive chart updates for a specific instrument with specified interval",
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/chart.trades.(instrument_name).(resolution)"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/chart.trades.(instrument_name).(resolution)/messages/subscription_message"
+        }
+      ],
+      "tags": [
+        {
+          "name": "trades"
+        }
+      ]
+    },
+    "receive_chart_updates": {
+      "title": "Receive chart updates",
+      "summary": "Client receives chart update notifications",
+      "description": "Receive chart update notifications from the server for the subscribed instrument",
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/chart.trades.(instrument_name).(resolution)"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/chart.trades.(instrument_name).(resolution)/messages/subscribe_request"
+        }
+      ],
+      "tags": [
+        {
+          "name": "trades"
+        }
+      ]
+    },
+    "send_subscribe_user": {
+      "title": "Send subscribe request",
+      "summary": "Client sends subscription request for user",
+      "description": "Send a subscription request to receive user notifications. This channel does not require any additional parameters.",
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/user.lock"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/user.lock/messages/subscription_message"
+        }
+      ],
+      "tags": [
+        {
+          "name": "private"
+        }
+      ]
+    },
+    "receive_user_updates": {
+      "title": "Receive user updates",
+      "summary": "Client receives user update notifications",
+      "description": "Receive user update notifications from the server for the subscribed instrument",
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/user.changes.(kind).(currency).(interval)"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/user.changes.(kind).(currency).(interval)/messages/subscribe_request"
+        }
+      ],
+      "tags": [
+        {
+          "name": "private"
+        }
+      ]
+    },
+    "send_subscribe_instrument": {
+      "title": "Send subscribe request for instrument",
+      "summary": "Client sends subscription request for instrument updates",
+      "description": "Send a subscription request to receive instrument updates for a specific instrument with specified interval",
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/instrument.state.(kind).(currency)"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/instrument.state.(kind).(currency)/messages/subscription_message"
+        }
+      ],
+      "tags": [
+        {
+          "name": "internal"
+        }
+      ]
+    },
+    "receive_instrument_updates": {
+      "title": "Receive instrument updates",
+      "summary": "Client receives instrument update notifications",
+      "description": "Receive instrument update notifications from the server for the subscribed instrument",
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/instrument.state.(kind).(currency)"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/instrument.state.(kind).(currency)/messages/subscribe_request"
+        }
+      ],
+      "tags": [
+        {
+          "name": "internal"
+        }
+      ]
+    },
+    "receive_user": {
+      "title": "Receive user",
+      "summary": "Client receives user notifications",
+      "description": "Receive user notifications from the server",
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/user.lock"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/user.lock/messages/subscribe_request"
+        }
+      ],
+      "tags": [
+        {
+          "name": "private"
+        }
+      ]
+    },
+    "send_subscribe_block_rfq": {
+      "title": "Send subscribe request for block_rfq",
+      "summary": "Client sends subscription request for block_rfq updates",
+      "description": "Send a subscription request to receive block_rfq updates for a specific instrument with specified interval",
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/block_rfq.trades.(currency)"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/block_rfq.trades.(currency)/messages/subscription_message"
+        }
+      ],
+      "tags": [
+        {
+          "name": "trades"
+        }
+      ]
+    },
+    "receive_block_rfq_updates": {
+      "title": "Receive block_rfq updates",
+      "summary": "Client receives block_rfq update notifications",
+      "description": "Receive block_rfq update notifications from the server for the subscribed instrument",
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/block_rfq.trades.(currency)"
+      },
+      "messages": [
+        {
+          "$ref": "#/channels/block_rfq.trades.(currency)/messages/subscribe_request"
+        }
+      ],
+      "tags": [
+        {
+          "name": "trades"
+        }
+      ]
+    }
+  },
+  "components": {
+    "schemas": {
+      "DeribitMessage": {
+        "type": "object",
+        "description": "Base message structure for Deribit WebSocket messages",
+        "properties": {
+          "jsonrpc": {
+            "type": "string",
+            "const": "2.0"
+          },
+          "method": {
+            "type": "string",
+            "description": "The subscription method"
+          },
+          "params": {
+            "type": "object",
+            "description": "Method parameters"
+          }
+        },
+        "required": [
+          "jsonrpc",
+          "method"
+        ]
+      }
+    },
+    "messages": {}
+  }
+}

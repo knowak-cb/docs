@@ -1,0 +1,572 @@
+---
+title: "Request Format"
+description: "Detailed JSON-RPC request format specification"
+---
+
+# Request Format
+
+Complete specification for formatting JSON-RPC 2.0 requests to the Deribit API.
+
+## Standard Request
+
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "public/get_instruments",
+  "params": {
+    "currency": "BTC",
+    "kind": "future"
+  },
+  "id": 42
+}
+```
+
+## Field Specifications
+
+### jsonrpc (Required)
+
+**Type**: `string`
+
+**Value**: Must be exactly `"2.0"`
+
+**Purpose**: Identifies the JSON-RPC protocol version
+
+```json
+{
+  "jsonrpc": "2.0"
+}
+```
+
+### method (Required)
+
+**Type**: `string`
+
+**Format**: `{visibility}/{action}_{resource}`
+
+**Examples**:
+- `public/get_time`
+- `private/buy`
+- `private/get_account_summary`
+
+```json
+{
+  "method": "public/get_instruments"
+}
+```
+
+### params (Optional)
+
+**Type**: `object` or `array`
+
+**Recommended**: Use object format for clarity
+
+**Object format** (recommended):
+```json
+{
+  "params": {
+    "currency": "BTC",
+    "kind": "future",
+    "expired": false
+  }
+}
+```
+
+**Array format** (legacy):
+```json
+{
+  "params": ["BTC", "future", false]
+}
+```
+
+### id (Required for requests)
+
+**Type**: `number` or `string`
+
+**Purpose**: Matches requests with responses
+
+**Best practice**: Use incrementing integers
+
+```json
+{
+  "id": 1
+}
+```
+
+<Info>
+Notifications (server-initiated messages) don't include an `id` field.
+</Info>
+
+## HTTP REST Requests
+
+### GET Method
+
+Parameters in URL query string:
+
+```bash
+curl "https://www.deribit.com/api/v2/public/get_instruments?currency=BTC&kind=future"
+```
+
+### POST Method
+
+Parameters in request body:
+
+```bash
+curl -X POST "https://www.deribit.com/api/v2/public/get_instruments" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "jsonrpc": "2.0",
+    "method": "public/get_instruments",
+    "params": {
+      "currency": "BTC",
+      "kind": "future"
+    },
+    "id": 1
+  }'
+```
+
+## WebSocket Requests
+
+### Connection
+
+```javascript
+const ws = new WebSocket('wss://www.deribit.com/ws/api/v2');
+```
+
+### Sending Requests
+
+```javascript
+ws.send(JSON.stringify({
+  "jsonrpc": "2.0",
+  "method": "public/get_instruments",
+  "params": {
+    "currency": "BTC"
+  },
+  "id": 1
+}));
+```
+
+## Authenticated Requests
+
+### HTTP with Bearer Token
+
+```bash
+curl "https://www.deribit.com/api/v2/private/get_account_summary?currency=BTC" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+### WebSocket with Token in Params
+
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "private/get_account_summary",
+  "params": {
+    "currency": "BTC",
+    "access_token": "YOUR_ACCESS_TOKEN"
+  },
+  "id": 1
+}
+```
+
+### WebSocket with Authenticated Connection
+
+First authenticate:
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "public/auth",
+  "params": {
+    "grant_type": "client_credentials",
+    "client_id": "YOUR_CLIENT_ID",
+    "client_secret": "YOUR_CLIENT_SECRET"
+  },
+  "id": 1
+}
+```
+
+Then make authenticated requests:
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "private/get_account_summary",
+  "params": {
+    "currency": "BTC"
+  },
+  "id": 2
+}
+```
+
+## Batch Requests
+
+Send multiple requests in one HTTP call:
+
+```json
+[
+  {
+    "jsonrpc": "2.0",
+    "method": "public/get_time",
+    "id": 1
+  },
+  {
+    "jsonrpc": "2.0",
+    "method": "public/get_instruments",
+    "params": {
+      "currency": "BTC"
+    },
+    "id": 2
+  },
+  {
+    "jsonrpc": "2.0",
+    "method": "public/get_book_summary_by_currency",
+    "params": {
+      "currency": "ETH"
+    },
+    "id": 3
+  }
+]
+```
+
+## Parameter Types
+
+### String Parameters
+
+```json
+{
+  "params": {
+    "currency": "BTC",
+    "instrument_name": "BTC-PERPETUAL"
+  }
+}
+```
+
+### Number Parameters
+
+```json
+{
+  "params": {
+    "amount": 100,
+    "price": 50000.5
+  }
+}
+```
+
+### Boolean Parameters
+
+```json
+{
+  "params": {
+    "expired": false,
+    "reduce_only": true
+  }
+}
+```
+
+### Array Parameters
+
+```json
+{
+  "params": {
+    "currencies": ["BTC", "ETH"],
+    "kinds": ["future", "option"]
+  }
+}
+```
+
+### Object Parameters
+
+```json
+{
+  "params": {
+    "advanced": {
+      "usd": true
+    }
+  }
+}
+```
+
+## Common Patterns
+
+### Pagination
+
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "private/get_order_history_by_currency",
+  "params": {
+    "currency": "BTC",
+    "count": 100,
+    "offset": 0
+  },
+  "id": 1
+}
+```
+
+### Filtering
+
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "public/get_instruments",
+  "params": {
+    "currency": "BTC",
+    "kind": "future",
+    "expired": false
+  },
+  "id": 1
+}
+```
+
+### Sorting
+
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "private/get_order_history_by_instrument",
+  "params": {
+    "instrument_name": "BTC-PERPETUAL",
+    "sorting": "desc"
+  },
+  "id": 1
+}
+```
+
+## Request Examples by Category
+
+### Market Data
+
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "public/get_order_book",
+  "params": {
+    "instrument_name": "BTC-PERPETUAL",
+    "depth": 10
+  },
+  "id": 1
+}
+```
+
+### Trading
+
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "private/buy",
+  "params": {
+    "instrument_name": "BTC-PERPETUAL",
+    "amount": 10,
+    "type": "limit",
+    "price": 50000,
+    "post_only": true
+  },
+  "id": 1
+}
+```
+
+### Account Management
+
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "private/get_account_summary",
+  "params": {
+    "currency": "BTC",
+    "extended": true
+  },
+  "id": 1
+}
+```
+
+### Subscriptions
+
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "public/subscribe",
+  "params": {
+    "channels": [
+      "book.BTC-PERPETUAL.100ms",
+      "trades.BTC-PERPETUAL.100ms"
+    ]
+  },
+  "id": 1
+}
+```
+
+## Validation Rules
+
+### Required Parameters
+
+Check API documentation for required parameters:
+
+```json
+{
+  "method": "private/buy",
+  "params": {
+    "instrument_name": "BTC-PERPETUAL",  // Required
+    "amount": 10,                         // Required
+    "type": "limit",                      // Required
+    "price": 50000                        // Required for limit orders
+  }
+}
+```
+
+### Parameter Constraints
+
+Respect min/max values and formats:
+
+```json
+{
+  "params": {
+    "amount": 10,           // Min: 1 contract
+    "price": 50000,         // Must be valid tick size
+    "label": "my-order",    // Max length: 64 chars
+    "time_in_force": "good_til_cancelled"  // Enum value
+  }
+}
+```
+
+## Error Prevention
+
+### Check Parameter Names
+
+```json
+// ✅ Correct
+{
+  "params": {
+    "instrument_name": "BTC-PERPETUAL"
+  }
+}
+
+// ❌ Wrong
+{
+  "params": {
+    "instrumentName": "BTC-PERPETUAL"  // camelCase not supported
+  }
+}
+```
+
+### Use Correct Types
+
+```json
+// ✅ Correct
+{
+  "params": {
+    "amount": 10
+  }
+}
+
+// ❌ Wrong
+{
+  "params": {
+    "amount": "10"  // Should be number, not string
+  }
+}
+```
+
+### Include Required Fields
+
+```json
+// ✅ Correct
+{
+  "jsonrpc": "2.0",
+  "method": "public/get_time",
+  "id": 1
+}
+
+// ❌ Wrong - missing jsonrpc
+{
+  "method": "public/get_time",
+  "id": 1
+}
+```
+
+## Complete Request Builder
+
+```javascript
+class RequestBuilder {
+  constructor() {
+    this.requestId = 1;
+  }
+
+  build(method, params = {}, includeAuth = false, accessToken = null) {
+    const request = {
+      jsonrpc: '2.0',
+      method,
+      id: this.requestId++
+    };
+
+    // Add params if provided
+    if (Object.keys(params).length > 0) {
+      request.params = params;
+    }
+
+    // Add access token if authenticated
+    if (includeAuth && accessToken) {
+      if (!request.params) {
+        request.params = {};
+      }
+      request.params.access_token = accessToken;
+    }
+
+    return request;
+  }
+
+  buildBatch(requests) {
+    return requests.map(req => 
+      this.build(req.method, req.params, req.includeAuth, req.accessToken)
+    );
+  }
+
+  validate(request) {
+    const errors = [];
+
+    if (!request.jsonrpc || request.jsonrpc !== '2.0') {
+      errors.push('Missing or invalid jsonrpc field');
+    }
+
+    if (!request.method || typeof request.method !== 'string') {
+      errors.push('Missing or invalid method field');
+    }
+
+    if (request.id === undefined) {
+      errors.push('Missing id field');
+    }
+
+    if (request.params && typeof request.params !== 'object') {
+      errors.push('Invalid params field (must be object or array)');
+    }
+
+    return {
+      valid: errors.length === 0,
+      errors
+    };
+  }
+}
+
+// Usage
+const builder = new RequestBuilder();
+
+const request = builder.build('public/get_instruments', {
+  currency: 'BTC',
+  kind: 'future'
+});
+
+const validation = builder.validate(request);
+if (validation.valid) {
+  console.log('Request is valid:', request);
+} else {
+  console.error('Validation errors:', validation.errors);
+}
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Response Format" icon="file-check" href="/response-format">
+    Learn about response format
+  </Card>
+  <Card title="Error Handling" icon="triangle-exclamation" href="/errors">
+    Handle errors properly
+  </Card>
+</CardGroup>
